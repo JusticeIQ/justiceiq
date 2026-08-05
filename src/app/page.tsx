@@ -42,6 +42,9 @@ export default function LandingPage() {
             <div>
               <Badge tone="teal">Connected to JusticeChamp™ Consumer Intake</Badge>
               <h1 className="text-4xl md:text-5xl font-bold leading-tight mt-5">JusticeIQ™</h1>
+              <p className="mt-3 text-lg md:text-xl font-semibold text-teal-400">
+                The operating system for litigation intelligence.
+              </p>
               <p className="mt-4 text-lg text-white/80 max-w-lg">
                 Qualified legal opportunities. Structured case intelligence. One connected platform.
               </p>
