@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #f5f6f9;
+  color: #11151d;
+}
+
+.container-page {
+  max-width: 1360px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .container-page {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid #0fb8ac;
+  outline-offset: 2px;
+}
+
+table.data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+table.data-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #535f78;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid rgba(11,14,20,0.08);
+  white-space: nowrap;
+}
+table.data-table td {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid rgba(11,14,20,0.06);
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+table.data-table tr:hover td {
+  background-color: rgba(15,184,172,0.04);
+}
