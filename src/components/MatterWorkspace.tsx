@@ -42,10 +42,10 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
     return <EmptyState title="Matter not found" description="This matter may not exist in the demo dataset." action={<Link href="/matters"><Button>Back to Current Cases</Button></Link>} />;
   }
 
-  const client = clients.find((c) => c.id === matter.clientId);
+const client = clients.find((c) => c.id === matter.clientId);
   const stages: readonly string[] = matter.category === "personal_injury" ? PI_STAGES : EMPLOYMENT_STAGES;
   const stageIndex = stages.indexOf(matter.stage);
-  const stageIndex = stages.indexOf(matter.stage);
+  const matterTasks = tasks.filter((t) => t.matterId === matter.id);
   const matterComms = communications.filter((c) => c.matterId === matter.id);
   const matterEvents = calendarEvents.filter((e) => e.matterId === matter.id);
   const responsibleLawyer = team.find((t) => t.id === matter.responsibleLawyerId);
