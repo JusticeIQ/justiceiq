@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
-import { Card, Badge, Button, StatCard, MiniBarChart, InfoBanner, ProgressBar } from "@/components/ui";
+import { Card, Badge, StatCard, MiniBarChart, InfoBanner } from "@/components/ui";
 import { ReferralStatusBadge } from "@/components/StatusBadges";
 import { useAppState } from "@/lib/store";
 
