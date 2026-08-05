@@ -43,8 +43,8 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
   }
 
   const client = clients.find((c) => c.id === matter.clientId);
-  const stages = matter.category === "personal_injury" ? PI_STAGES : EMPLOYMENT_STAGES;
   const stages: readonly string[] = matter.category === "personal_injury" ? PI_STAGES : EMPLOYMENT_STAGES;
+  const stageIndex = stages.indexOf(matter.stage);
   const stageIndex = stages.indexOf(matter.stage);
   const matterComms = communications.filter((c) => c.matterId === matter.id);
   const matterEvents = calendarEvents.filter((e) => e.matterId === matter.id);
