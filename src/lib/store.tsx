@@ -12,7 +12,7 @@ import {
 } from "./demo-data";
 
 const STORAGE_KEY = "justiceiq-demo-state-v1";
-const CURRENT_USER_ID = "tm-1"; // Sarah Kim, Managing Partner — the demo "logged in" perspective
+const CURRENT_USER_ID = "tm-1";
 
 interface AppState {
   isAuthenticated: boolean;
@@ -73,6 +73,10 @@ interface AppContextValue extends AppState {
   addMatterNote: (matterId: string, body: string) => void;
   addMatterDocument: (matterId: string, doc: Omit<MatterDocument, "id" | "uploadedAt">) => void;
   addCommunication: (comm: Omit<Communication, "id" | "createdAt">) => void;
+  toggleCommunicationClientVisible: (commId: string) => void;
+  toggleDocumentClientVisible: (matterId: string, docId: string) => void;
+  markDocumentUpdated: (matterId: string, docId: string, note: string) => void;
+  notifyClientOfDocumentUpdate: (matterId: string, docId: string, notify: boolean) => void;
   updateMatterStage: (matterId: string, stage: string) => void;
   markNotificationRead: (id: string) => void;
   logActivity: (message: string) => void;
@@ -89,7 +93,6 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) setState(JSON.parse(raw));
     } catch {
-      // ignore corrupt storage
     }
     setHydrated(true);
   }, []);
@@ -99,7 +102,6 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
-      // storage may be unavailable — fail silently
     }
   }, [state, hydrated]);
 
@@ -130,7 +132,6 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     try {
       window.localStorage.removeItem(STORAGE_KEY);
     } catch {
-      // ignore
     }
   }, []);
 
@@ -213,7 +214,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           return { ...r, consultation, status: "consultation_scheduled", lastActivityAt: new Date().toISOString() };
         }),
         calendarEvents: [
-          { id: `cal-${Date.now()}`, matterId: null, referralId, title: `Consultation — ${prev.referrals.find((r) => r.id === referralId)?.consumerName ?? "Referral"}`, type: "consultation", date: data.proposedTimes[0]?.slice(0, 10) ?? "", time: data.proposedTimes[0]?.slice(11, 16) ?? "09:00", lawyerId: data.lawyerId, description: data.preparationInstructions },
+          { id: `cal-${Date.now()}`, matterId: null, referralId, title: `Consultation \u2014 ${prev.referrals.find((r) => r.id === referralId)?.consumerName ?? "Referral"}`, type: "consultation", date: data.proposedTimes[0]?.slice(0, 10) ?? "", time: data.proposedTimes[0]?.slice(11, 16) ?? "09:00", lawyerId: data.lawyerId, description: data.preparationInstructions },
           ...prev.calendarEvents,
         ],
       }));
@@ -258,7 +259,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         timeline: referral?.timeline.map((t) => ({ ...t, id: `mt-${t.id}` })) ?? [],
         documents: referral?.documents.map((d) => ({
           id: `md-${d.id}`, name: d.name, folder: "Intake", category: d.category, uploadedBy: "Imported from JusticeChamp",
-          uploadedAt: d.uploadedAt, confidentiality: "standard" as const, clientVisible: true, tags: [], sizeLabel: "—",
+          uploadedAt: d.uploadedAt, confidentiality: "standard" as const, clientVisible: true, tags: [], sizeLabel: "\u2014",
         })) ?? [],
         notes: referral?.notes.map((n) => ({ id: `mn-${n.id}`, authorName: n.authorName, body: n.body, createdAt: n.createdAt })) ?? [],
         damages: [],
@@ -317,6 +318,82 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, communications: [{ ...comm, id: `comm-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev.communications] }));
   }, []);
 
+  const toggleCommunicationClientVisible = useCallback((commId: string) => {
+    setState((prev) => ({
+      ...prev,
+      communications: prev.communications.map((c) => (c.id === commId ? { ...c, clientVisible: c.clientVisible === false ? true : false } : c)),
+    }));
+    logActivity(`Changed client visibility on a secure message`);
+  }, [logActivity]);
+
+  const toggleDocumentClientVisible = useCallback(
+    (matterId: string, docId: string) => {
+      setState((prev) => ({
+        ...prev,
+        matters: prev.matters.map((m) =>
+          m.id !== matterId ? m : { ...m, documents: m.documents.map((d) => (d.id === docId ? { ...d, clientVisible: !d.clientVisible } : d)) }
+        ),
+      }));
+      logActivity(`Changed client visibility on a document in matter ${matterId}`);
+    },
+    [logActivity]
+  );
+
+  const markDocumentUpdated = useCallback(
+    (matterId: string, docId: string, note: string) => {
+      setState((prev) => ({
+        ...prev,
+        matters: prev.matters.map((m) =>
+          m.id !== matterId
+            ? m
+            : {
+                ...m,
+                documents: m.documents.map((d) =>
+                  d.id === docId ? { ...d, updatedPendingClientNotice: true, lastUpdatedAt: new Date().toISOString(), lastUpdateNote: note } : d
+                ),
+              }
+        ),
+      }));
+      logActivity(`Updated a document in matter ${matterId}`);
+    },
+    [logActivity]
+  );
+
+  const notifyClientOfDocumentUpdate = useCallback(
+    (matterId: string, docId: string, notify: boolean) => {
+      setState((prev) => {
+        const matter = prev.matters.find((m) => m.id === matterId);
+        const doc = matter?.documents.find((d) => d.id === docId);
+        const client = prev.clients.find((c) => c.id === matter?.clientId);
+        const nextMatters = prev.matters.map((m) =>
+          m.id !== matterId
+            ? m
+            : { ...m, documents: m.documents.map((d) => (d.id === docId ? { ...d, updatedPendingClientNotice: false } : d)) }
+        );
+        if (!notify || !matter || !doc) {
+          return { ...prev, matters: nextMatters };
+        }
+        const comm: Communication = {
+          id: `comm-${Date.now()}`,
+          matterId,
+          referralId: null,
+          clientId: matter.clientId,
+          type: "secure_message",
+          from: "Sarah Kim",
+          to: client?.fullName ?? "Client",
+          subject: `File updated: ${doc.name}`,
+          body: doc.lastUpdateNote || "This file in your matter was updated.",
+          createdAt: new Date().toISOString(),
+          teamMemberId: CURRENT_USER_ID,
+          clientVisible: true,
+        };
+        return { ...prev, matters: nextMatters, communications: [comm, ...prev.communications] };
+      });
+      logActivity(notify ? `Notified client of a file update in matter ${matterId}` : `Updated a file in matter ${matterId} without notifying the client`);
+    },
+    [logActivity]
+  );
+
   const updateMatterStage = useCallback(
     (matterId: string, stage: string) => {
       setState((prev) => ({ ...prev, matters: prev.matters.map((m) => (m.id === matterId ? { ...m, stage, lastActivityAt: new Date().toISOString() } : m)) }));
@@ -356,6 +433,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       addMatterNote,
       addMatterDocument,
       addCommunication,
+      toggleCommunicationClientVisible,
+      toggleDocumentClientVisible,
+      markDocumentUpdated,
+      notifyClientOfDocumentUpdate,
       updateMatterStage,
       markNotificationRead,
       logActivity,
@@ -364,6 +445,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       state, hydrated, currentUser, loginDemo, login, signup, logout, getReferral, getMatter, updateReferralStatus,
       assignLawyer, addReferralNote, declineReferral, runConflictCheck, scheduleConsultation, recordConsultationOutcome,
       convertReferralToMatter, addTask, updateTaskStatus, addMatterNote, addMatterDocument, addCommunication,
+      toggleCommunicationClientVisible, toggleDocumentClientVisible, markDocumentUpdated, notifyClientOfDocumentUpdate,
       updateMatterStage, markNotificationRead, logActivity,
     ]
   );
