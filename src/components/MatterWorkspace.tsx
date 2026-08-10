@@ -45,11 +45,21 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
   const {
     getMatter, clients, team, tasks, communications, calendarEvents, activityLog,
     addMatterNote, addMatterDocument, addCommunication, addTask, updateTaskStatus, updateMatterStage,
+    toggleDocumentClientVisible, markDocumentUpdated, notifyClientOfDocumentUpdate, toggleCommunicationClientVisible,
   } = useAppState();
 
   const [noteBody, setNoteBody] = useState("");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newCommBody, setNewCommBody] = useState("");
+  const [commMode, setCommMode] = useState<"secure_message" | "internal_comment">("secure_message");
+  const [commClientVisible, setCommClientVisible] = useState(true);
+
+  const [newDocName, setNewDocName] = useState("");
+  const [newDocConfidentiality, setNewDocConfidentiality] = useState<"standard" | "confidential" | "privileged" | "internal_only">("standard");
+  const [newDocClientVisible, setNewDocClientVisible] = useState(true);
+
+  const [updatingDocId, setUpdatingDocId] = useState<string | null>(null);
+  const [updateNote, setUpdateNote] = useState("");
 
   const matter = getMatter(matterId);
   const tab = activeTab || "overview";
@@ -69,6 +79,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
   const matterComms = communications.filter((c) => c.matterId === matter.id);
   const matterEvents = calendarEvents.filter((e) => e.matterId === matter.id);
   const openTasks = matterTasks.filter((t) => t.status !== "complete" && t.status !== "cancelled");
+  const clientUploads = matter.documents.filter((d) => d.fromClient);
 
   const stages = matter.category === "personal_injury" ? PI_STAGES : EMPLOYMENT_STAGES;
   const stageList = stages as readonly string[];
@@ -106,14 +117,58 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
       matterId: matter!.id,
       referralId: null,
       clientId: matter!.clientId,
-      type: "internal_comment",
+      type: commMode,
       from: "Sarah Kim",
       to: client?.fullName ?? "Client",
-      subject: "Case note",
+      subject: commMode === "secure_message" ? "Secure update" : "Case note",
       body: newCommBody.trim(),
       teamMemberId: "tm-1",
+      clientVisible: commMode === "secure_message" ? commClientVisible : undefined,
     });
     setNewCommBody("");
+  }
+
+  function handleAddDocument() {
+    if (!newDocName.trim()) return;
+    addMatterDocument(matter!.id, {
+      name: newDocName.trim(),
+      folder: "General",
+      category: "General",
+      uploadedBy: "Sarah Kim",
+      confidentiality: newDocConfidentiality,
+      clientVisible: newDocClientVisible,
+      tags: [],
+      sizeLabel: "\u2014",
+    });
+    setNewDocName("");
+    setNewDocConfidentiality("standard");
+    setNewDocClientVisible(true);
+  }
+
+  function handleLogClientUpload() {
+    addMatterDocument(matter!.id, {
+      name: `client_upload_${new Date().toISOString().slice(0, 10)}.jpg`,
+      folder: "Client Uploads",
+      category: "Photo/Video",
+      uploadedBy: client?.fullName ?? "Client",
+      confidentiality: "standard",
+      clientVisible: true,
+      tags: ["from-client"],
+      sizeLabel: "\u2014",
+      fromClient: true,
+    });
+  }
+
+  function handleMarkUpdated(docId: string) {
+    setUpdatingDocId(docId);
+    setUpdateNote("");
+  }
+
+  function handleConfirmUpdate(docId: string) {
+    if (!updateNote.trim()) return;
+    markDocumentUpdated(matter!.id, docId, updateNote.trim());
+    setUpdatingDocId(null);
+    setUpdateNote("");
   }
 
   return (
@@ -139,7 +194,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold text-graphite-900">{matter.matterName}</h1>
-              <p className="text-sm text-graphite-500">{matter.matterNumber} · {matter.practiceArea} · {matter.jurisdiction}</p>
+              <p className="text-sm text-graphite-500">{matter.matterNumber} \u00b7 {matter.practiceArea} \u00b7 {matter.jurisdiction}</p>
             </div>
             <Badge tone={riskTone(matter.riskStatus)}>{matter.riskStatus.replace(/_/g, " ")}</Badge>
           </div>
@@ -178,7 +233,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               <ul className="text-sm text-graphite-600 space-y-1.5">
                 <li><span className="text-graphite-400">Client:</span> {client?.fullName ?? "Unknown"}</li>
                 <li><span className="text-graphite-400">Responsible lawyer:</span> {responsibleLawyer?.fullName ?? "Unassigned"}</li>
-                <li><span className="text-graphite-400">Team:</span> {teamMembers.map((t) => t.fullName).join(", ") || "—"}</li>
+                <li><span className="text-graphite-400">Team:</span> {teamMembers.map((t) => t.fullName).join(", ") || "\u2014"}</li>
                 <li><span className="text-graphite-400">Open date:</span> {matter.openDate}</li>
                 <li><span className="text-graphite-400">Next deadline:</span> {matter.nextDeadline ? `${matter.nextDeadlineLabel} (${matter.nextDeadline})` : "None scheduled"}</li>
                 <li><span className="text-graphite-400">Consent status:</span> {matter.consentStatus}</li>
@@ -195,47 +250,115 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
       )}
 
       {tab === "documents" && (
-        <Card>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-graphite-900 text-sm">Documents ({matter.documents.length})</h2>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() =>
-                addMatterDocument(matter.id, {
-                  name: "New document.pdf",
-                  folder: "General",
-                  category: "General",
-                  uploadedBy: "Sarah Kim",
-                  confidentiality: "standard",
-                  clientVisible: false,
-                  tags: [],
-                  sizeLabel: "—",
-                })
-              }
-            >
-              Add document
-            </Button>
-          </div>
-          {matter.documents.length === 0 ? (
-            <EmptyState title="No documents yet" description="Documents uploaded for this matter will appear here." />
-          ) : (
-            <table className="data-table">
-              <thead><tr><th>Name</th><th>Folder</th><th>Category</th><th>Confidentiality</th><th>Uploaded</th></tr></thead>
-              <tbody>
-                {matter.documents.map((d) => (
-                  <tr key={d.id}>
-                    <td>{d.name}</td>
-                    <td>{d.folder}</td>
-                    <td>{d.category}</td>
-                    <td><Badge tone={d.confidentiality === "privileged" ? "red" : d.confidentiality === "confidential" ? "amber" : "gray"}>{d.confidentiality}</Badge></td>
-                    <td>{new Date(d.uploadedAt).toLocaleDateString()}</td>
-                  </tr>
+        <div className="space-y-4">
+          {clientUploads.length > 0 && (
+            <Card className="border-teal-200">
+              <h2 className="font-semibold text-graphite-900 text-sm mb-1">Client uploads ({clientUploads.length})</h2>
+              <p className="text-xs text-graphite-500 mb-3">
+                Documents, photos, and videos the client sent from their JusticeChamp app appear here.
+              </p>
+              <ul className="space-y-2">
+                {clientUploads.map((d) => (
+                  <li key={d.id} className="flex items-center justify-between text-sm border-b border-graphite-100 pb-2">
+                    <div>
+                      <p className="font-medium text-graphite-900">{d.name}</p>
+                      <p className="text-xs text-graphite-500">From {d.uploadedBy} \u00b7 {new Date(d.uploadedAt).toLocaleString()}</p>
+                    </div>
+                    <Badge tone="teal">From client</Badge>
+                  </li>
                 ))}
-              </tbody>
-            </table>
+              </ul>
+            </Card>
           )}
-        </Card>
+
+          <Card>
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <h2 className="font-semibold text-graphite-900 text-sm">Documents ({matter.documents.length})</h2>
+              <Button size="sm" variant="ghost" onClick={handleLogClientUpload}>
+                Simulate: client sent a file
+              </Button>
+            </div>
+
+            <div className="rounded-lg bg-graphite-50 border border-graphite-100 p-3 mb-4 space-y-2">
+              <p className="text-xs font-medium text-graphite-700">Add a document to this matter</p>
+              <div className="flex flex-wrap gap-2 items-center">
+                <input
+                  value={newDocName}
+                  onChange={(e) => setNewDocName(e.target.value)}
+                  placeholder="Document name"
+                  className="flex-1 min-w-[160px] rounded-lg border border-graphite-200 px-3 py-2 text-sm"
+                />
+                <select
+                  value={newDocConfidentiality}
+                  onChange={(e) => setNewDocConfidentiality(e.target.value as typeof newDocConfidentiality)}
+                  className="rounded-lg border border-graphite-200 px-2 py-2 text-sm"
+                >
+                  <option value="standard">Standard</option>
+                  <option value="confidential">Confidential</option>
+                  <option value="privileged">Privileged</option>
+                  <option value="internal_only">Internal only</option>
+                </select>
+                <label className="flex items-center gap-1.5 text-xs text-graphite-600 whitespace-nowrap">
+                  <input type="checkbox" checked={newDocClientVisible} onChange={(e) => setNewDocClientVisible(e.target.checked)} />
+                  Visible to client
+                </label>
+                <Button size="sm" onClick={handleAddDocument} disabled={!newDocName.trim()}>Add document</Button>
+              </div>
+            </div>
+
+            {matter.documents.length === 0 ? (
+              <EmptyState title="No documents yet" description="Documents uploaded for this matter will appear here." />
+            ) : (
+              <ul className="space-y-2">
+                {matter.documents.map((d) => (
+                  <li key={d.id} className="border border-graphite-100 rounded-lg p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium text-graphite-900">{d.name}</p>
+                        <p className="text-xs text-graphite-500">{d.folder} \u00b7 {d.category} \u00b7 {new Date(d.uploadedAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        <Badge tone={d.confidentiality === "privileged" ? "red" : d.confidentiality === "confidential" ? "amber" : "gray"}>{d.confidentiality}</Badge>
+                        {d.fromClient && <Badge tone="teal">From client</Badge>}
+                        <Badge tone={d.clientVisible ? "green" : "gray"}>{d.clientVisible ? "Client can view" : "Redacted from client"}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <Button size="sm" variant="outline" onClick={() => toggleDocumentClientVisible(matter.id, d.id)}>
+                        {d.clientVisible ? "Redact from client" : "Share with client"}
+                      </Button>
+                      {updatingDocId === d.id ? (
+                        <div className="flex flex-1 min-w-[240px] gap-2 items-center">
+                          <input
+                            value={updateNote}
+                            onChange={(e) => setUpdateNote(e.target.value)}
+                            placeholder="What changed?"
+                            className="flex-1 rounded-lg border border-graphite-200 px-2 py-1.5 text-xs"
+                          />
+                          <Button size="sm" onClick={() => handleConfirmUpdate(d.id)} disabled={!updateNote.trim()}>Save update</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setUpdatingDocId(null)}>Cancel</Button>
+                        </div>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => handleMarkUpdated(d.id)}>Mark as updated</Button>
+                      )}
+                    </div>
+                    {d.updatedPendingClientNotice && (
+                      <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 p-2.5">
+                        <p className="text-xs text-amber-900">
+                          This file was updated{d.lastUpdateNote ? `: "${d.lastUpdateNote}"` : "."} Send the client a note that it changed?
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Button size="sm" onClick={() => notifyClientOfDocumentUpdate(matter.id, d.id, true)}>Yes, notify client</Button>
+                          <Button size="sm" variant="ghost" onClick={() => notifyClientOfDocumentUpdate(matter.id, d.id, false)}>No, don't notify</Button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
       )}
 
       {tab === "timeline" && (
@@ -279,7 +402,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                 <li key={t.id} className="flex items-center justify-between text-sm border-b border-graphite-100 pb-2">
                   <div>
                     <p className="font-medium text-graphite-900">{t.title}</p>
-                    <p className="text-xs text-graphite-500">Due {t.dueDate} · {t.priority} priority</p>
+                    <p className="text-xs text-graphite-500">Due {t.dueDate} \u00b7 {t.priority} priority</p>
                   </div>
                   <select
                     value={t.status}
@@ -301,25 +424,65 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
 
       {tab === "communications" && (
         <Card>
-          <h2 className="font-semibold text-graphite-900 text-sm mb-3">Communications ({matterComms.length})</h2>
-          <div className="flex gap-2 mb-4">
-            <input
-              value={newCommBody}
-              onChange={(e) => setNewCommBody(e.target.value)}
-              placeholder="Log a note or message"
-              className="flex-1 rounded-lg border border-graphite-200 px-3 py-2 text-sm"
-            />
-            <Button size="sm" onClick={handleAddComm}>Log</Button>
+          <h2 className="font-semibold text-graphite-900 text-sm mb-1">Communications ({matterComms.length})</h2>
+          <p className="text-xs text-graphite-500 mb-3">
+            Secure messages are simulated delivery to the client's JusticeChamp app \u2014 the two apps don't share a live
+            connection yet. You can redact a message from client view at any time.
+          </p>
+
+          <div className="rounded-lg bg-graphite-50 border border-graphite-100 p-3 mb-4 space-y-2">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCommMode("secure_message")}
+                className={`text-xs px-3 py-1.5 rounded-full border ${commMode === "secure_message" ? "bg-graphite-900 text-white border-graphite-900" : "border-graphite-200 text-graphite-600"}`}
+              >
+                Message to client
+              </button>
+              <button
+                onClick={() => setCommMode("internal_comment")}
+                className={`text-xs px-3 py-1.5 rounded-full border ${commMode === "internal_comment" ? "bg-graphite-900 text-white border-graphite-900" : "border-graphite-200 text-graphite-600"}`}
+              >
+                Internal note
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={newCommBody}
+                onChange={(e) => setNewCommBody(e.target.value)}
+                placeholder={commMode === "secure_message" ? "Write a confidential update for the client\u2026" : "Log a note or message"}
+                className="flex-1 rounded-lg border border-graphite-200 px-3 py-2 text-sm"
+              />
+              <Button size="sm" onClick={handleAddComm}>{commMode === "secure_message" ? "Send" : "Log"}</Button>
+            </div>
+            {commMode === "secure_message" && (
+              <label className="flex items-center gap-1.5 text-xs text-graphite-600">
+                <input type="checkbox" checked={commClientVisible} onChange={(e) => setCommClientVisible(e.target.checked)} />
+                Client can view this message (uncheck to keep it in the file without sending \u2014 you can share it later)
+              </label>
+            )}
           </div>
+
           {matterComms.length === 0 ? (
             <EmptyState title="No communications logged" description="Messages, calls, and notes for this matter will appear here." />
           ) : (
             <ul className="space-y-3">
               {matterComms.map((c) => (
                 <li key={c.id} className="text-sm border-b border-graphite-100 pb-2">
-                  <p className="text-graphite-900 font-medium">{c.subject}</p>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-graphite-900 font-medium">{c.subject}</p>
+                    {c.type === "secure_message" && (
+                      <Badge tone={c.clientVisible === false ? "gray" : "green"}>{c.clientVisible === false ? "Redacted \u2014 internal only" : "Client can view"}</Badge>
+                    )}
+                  </div>
                   <p className="text-graphite-600">{c.body}</p>
-                  <p className="text-xs text-graphite-400">{c.from} → {c.to} · {new Date(c.createdAt).toLocaleString()}</p>
+                  <div className="flex items-center justify-between gap-2 flex-wrap mt-1">
+                    <p className="text-xs text-graphite-400">{c.from} \u2192 {c.to} \u00b7 {new Date(c.createdAt).toLocaleString()}</p>
+                    {c.type === "secure_message" && (
+                      <button className="text-xs text-teal-600 hover:underline" onClick={() => toggleCommunicationClientVisible(c.id)}>
+                        {c.clientVisible === false ? "Restore client access" : "Redact from client"}
+                      </button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -350,14 +513,14 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
             <ul className="text-sm text-graphite-600 space-y-1.5">
               <li><span className="text-graphite-400">Name:</span> {client.fullName}</li>
               <li><span className="text-graphite-400">Email:</span> {client.email}</li>
-              <li><span className="text-graphite-400">Phone:</span> {client.phone || "—"}</li>
-              <li><span className="text-graphite-400">Address:</span> {client.address || "—"}</li>
+              <li><span className="text-graphite-400">Phone:</span> {client.phone || "\u2014"}</li>
+              <li><span className="text-graphite-400">Address:</span> {client.address || "\u2014"}</li>
               <li><span className="text-graphite-400">Portal status:</span> {client.portalStatus.replace(/_/g, " ")}</li>
               <li className="pt-2">
                 <span className="text-graphite-400">Consent history:</span>
                 <ul className="mt-1 space-y-1">
                   {client.consentHistory.map((c, i) => (
-                    <li key={i} className="text-xs">{c.label} — {c.date} {c.granted ? "(granted)" : "(not granted)"}</li>
+                    <li key={i} className="text-xs">{c.label} \u2014 {c.date} {c.granted ? "(granted)" : "(not granted)"}</li>
                   ))}
                 </ul>
               </li>
@@ -376,7 +539,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               {matterEvents.map((e) => (
                 <li key={e.id} className="text-sm border-b border-graphite-100 pb-2">
                   <p className="font-medium text-graphite-900">{e.title}</p>
-                  <p className="text-xs text-graphite-500">{e.date} at {e.time} · {e.type.replace(/_/g, " ")}</p>
+                  <p className="text-xs text-graphite-500">{e.date} at {e.time} \u00b7 {e.type.replace(/_/g, " ")}</p>
                 </li>
               ))}
             </ul>
@@ -403,7 +566,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               {matter.notes.map((n) => (
                 <li key={n.id} className="text-sm border-b border-graphite-100 pb-2">
                   <p className="text-graphite-600">{n.body}</p>
-                  <p className="text-xs text-graphite-400">{n.authorName} · {new Date(n.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-graphite-400">{n.authorName} \u00b7 {new Date(n.createdAt).toLocaleString()}</p>
                 </li>
               ))}
             </ul>
@@ -424,7 +587,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                   <tr key={p.id}>
                     <td>{p.name}</td>
                     <td>{p.role.replace(/_/g, " ")}</td>
-                    <td>{p.contactInfo || "—"}</td>
+                    <td>{p.contactInfo || "\u2014"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -468,7 +631,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               {matterActivity.map((a) => (
                 <li key={a.id} className="text-sm border-b border-graphite-100 pb-2">
                   <p className="text-graphite-700">{a.message}</p>
-                  <p className="text-xs text-graphite-400">{a.actor} · {new Date(a.timestamp).toLocaleString()}</p>
+                  <p className="text-xs text-graphite-400">{a.actor} \u00b7 {new Date(a.timestamp).toLocaleString()}</p>
                 </li>
               ))}
             </ul>
