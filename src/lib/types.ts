@@ -25,7 +25,7 @@ export interface TeamMember {
   languages: string[];
   active: boolean;
   avatarInitials: string;
-  capacity: number; // active matter capacity target
+  capacity: number;
   createdAt: string;
 }
 
@@ -215,6 +215,10 @@ export interface MatterDocument {
   clientVisible: boolean;
   tags: string[];
   sizeLabel: string;
+  fromClient?: boolean;
+  updatedPendingClientNotice?: boolean;
+  lastUpdatedAt?: string;
+  lastUpdateNote?: string;
 }
 
 export type TaskStatus = "not_started" | "in_progress" | "waiting" | "complete" | "cancelled";
@@ -272,6 +276,7 @@ export interface Communication {
   body: string;
   createdAt: string;
   teamMemberId: string;
+  clientVisible?: boolean;
 }
 
 export interface Matter {
