@@ -247,7 +247,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           return { ...r, consultation, status: "consultation_scheduled", lastActivityAt: new Date().toISOString() };
         }),
         calendarEvents: [
-          { id: `cal-${Date.now()}`, matterId: null, referralId, title: `Consultation \u2014 ${prev.referrals.find((r) => r.id === referralId)?.consumerName ?? "Referral"}`, type: "consultation", date: data.proposedTimes[0]?.slice(0, 10) ?? "", time: data.proposedTimes[0]?.slice(11, 16) ?? "09:00", lawyerId: data.lawyerId, description: data.preparationInstructions },
+          { id: `cal-${Date.now()}`, matterId: null, referralId, title: `Consultation — ${prev.referrals.find((r) => r.id === referralId)?.consumerName ?? "Referral"}`, type: "consultation", date: data.proposedTimes[0]?.slice(0, 10) ?? "", time: data.proposedTimes[0]?.slice(11, 16) ?? "09:00", lawyerId: data.lawyerId, description: data.preparationInstructions },
           ...prev.calendarEvents,
         ],
       }));
@@ -292,7 +292,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         timeline: referral?.timeline.map((t) => ({ ...t, id: `mt-${t.id}` })) ?? [],
         documents: referral?.documents.map((d) => ({
           id: `md-${d.id}`, name: d.name, folder: "Intake", category: d.category, uploadedBy: "Imported from JusticeChamp",
-          uploadedAt: d.uploadedAt, confidentiality: "standard" as const, clientVisible: true, tags: [], sizeLabel: "\u2014",
+          uploadedAt: d.uploadedAt, confidentiality: "standard" as const, clientVisible: true, tags: [], sizeLabel: "—",
         })) ?? [],
         notes: referral?.notes.map((n) => ({ id: `mn-${n.id}`, authorName: n.authorName, body: n.body, createdAt: n.createdAt })) ?? [],
         damages: [],

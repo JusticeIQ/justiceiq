@@ -197,7 +197,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
       confidentiality: newDocConfidentiality,
       clientVisible: newDocClientVisible,
       tags: [],
-      sizeLabel: "\u2014",
+      sizeLabel: "—",
     });
     setNewDocName("");
     setNewDocConfidentiality("standard");
@@ -213,7 +213,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
       confidentiality: "standard",
       clientVisible: true,
       tags: ["from-client"],
-      sizeLabel: "\u2014",
+      sizeLabel: "—",
       fromClient: true,
     });
   }
@@ -368,7 +368,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold text-graphite-900">{matter.matterName}</h1>
-              <p className="text-sm text-graphite-500">{matter.matterNumber} \u00b7 {matter.practiceArea} \u00b7 {matter.jurisdiction}</p>
+              <p className="text-sm text-graphite-500">{matter.matterNumber} · {matter.practiceArea} · {matter.jurisdiction}</p>
             </div>
             <Badge tone={riskTone(matter.riskStatus)}>{matter.riskStatus.replace(/_/g, " ")}</Badge>
           </div>
@@ -407,7 +407,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               <ul className="text-sm text-graphite-600 space-y-1.5">
                 <li><span className="text-graphite-400">Client:</span> {client?.fullName ?? "Unknown"}</li>
                 <li><span className="text-graphite-400">Responsible lawyer:</span> {responsibleLawyer?.fullName ?? "Unassigned"}</li>
-                <li><span className="text-graphite-400">Team:</span> {teamMembers.map((t) => t.fullName).join(", ") || "\u2014"}</li>
+                <li><span className="text-graphite-400">Team:</span> {teamMembers.map((t) => t.fullName).join(", ") || "—"}</li>
                 <li><span className="text-graphite-400">Open date:</span> {matter.openDate}</li>
                 <li><span className="text-graphite-400">Next deadline:</span> {matter.nextDeadline ? `${matter.nextDeadlineLabel} (${matter.nextDeadline})` : "None scheduled"}</li>
                 <li><span className="text-graphite-400">Consent status:</span> {matter.consentStatus}</li>
@@ -436,7 +436,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                   <li key={d.id} className="flex items-center justify-between text-sm border-b border-graphite-100 pb-2">
                     <div>
                       <p className="font-medium text-graphite-900">{d.name}</p>
-                      <p className="text-xs text-graphite-500">From {d.uploadedBy} \u00b7 {new Date(d.uploadedAt).toLocaleString()}</p>
+                      <p className="text-xs text-graphite-500">From {d.uploadedBy} · {new Date(d.uploadedAt).toLocaleString()}</p>
                     </div>
                     <Badge tone="teal">From client</Badge>
                   </li>
@@ -489,7 +489,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-medium text-graphite-900">{d.name}</p>
-                        <p className="text-xs text-graphite-500">{d.folder} \u00b7 {d.category} \u00b7 {new Date(d.uploadedAt).toLocaleDateString()}</p>
+                        <p className="text-xs text-graphite-500">{d.folder} · {d.category} · {new Date(d.uploadedAt).toLocaleDateString()}</p>
                       </div>
                       <div className="flex flex-wrap gap-1.5 items-center">
                         <Badge tone={d.confidentiality === "privileged" ? "red" : d.confidentiality === "confidential" ? "amber" : "gray"}>{d.confidentiality}</Badge>
@@ -541,7 +541,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
             <h2 className="font-semibold text-graphite-900 text-sm mb-1">Log a case change</h2>
             <p className="text-xs text-graphite-500 mb-3">
               Record a meaningful change to this case. Unless marked internal-only, saving will offer to prepare a
-              plain-language client update \u2014 nothing is sent until you review and approve it.
+              plain-language client update — nothing is sent until you review and approve it.
             </p>
             <div className="space-y-2">
               <input
@@ -553,7 +553,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               <textarea
                 value={changeDetail}
                 onChange={(e) => setChangeDetail(e.target.value)}
-                placeholder="Internal detail (may include privileged/strategy notes \u2014 never shared with the client)"
+                placeholder="Internal detail (may include privileged/strategy notes — never shared with the client)"
                 rows={2}
                 className="w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm"
               />
@@ -563,7 +563,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                 </select>
                 <label className="flex items-center gap-1.5 text-xs text-graphite-600">
                   <input type="checkbox" checked={changeInternalOnly} onChange={(e) => setChangeInternalOnly(e.target.checked)} />
-                  Internal only \u2014 never eligible for a client update
+                  Internal only — never eligible for a client update
                 </label>
                 <Button size="sm" onClick={handleSaveChange} disabled={!changeSummary.trim()}>Save change</Button>
               </div>
@@ -589,7 +589,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                         </div>
                       </div>
                       {c.detail && <p className="text-xs text-graphite-500 mt-1">{c.detail}</p>}
-                      <p className="text-xs text-graphite-400 mt-1">{c.createdBy} \u00b7 {new Date(c.createdAt).toLocaleString()}</p>
+                      <p className="text-xs text-graphite-400 mt-1">{c.createdBy} · {new Date(c.createdAt).toLocaleString()}</p>
                     </li>
                   );
                 })}
@@ -640,7 +640,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                 <li key={t.id} className="flex items-center justify-between text-sm border-b border-graphite-100 pb-2">
                   <div>
                     <p className="font-medium text-graphite-900">{t.title}</p>
-                    <p className="text-xs text-graphite-500">Due {t.dueDate} \u00b7 {t.priority} priority</p>
+                    <p className="text-xs text-graphite-500">Due {t.dueDate} · {t.priority} priority</p>
                   </div>
                   <select
                     value={t.status}
@@ -688,7 +688,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               <input
                 value={newCommBody}
                 onChange={(e) => setNewCommBody(e.target.value)}
-                placeholder={commMode === "secure_message" ? "Write a confidential update for the client\u2026" : "Log a note or message"}
+                placeholder={commMode === "secure_message" ? "Write a confidential update for the client…" : "Log a note or message"}
                 className="flex-1 rounded-lg border border-graphite-200 px-3 py-2 text-sm"
               />
               <Button size="sm" onClick={handleAddComm}>{commMode === "secure_message" ? "Send" : "Log"}</Button>
@@ -696,7 +696,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
             {commMode === "secure_message" && (
               <label className="flex items-center gap-1.5 text-xs text-graphite-600">
                 <input type="checkbox" checked={commClientVisible} onChange={(e) => setCommClientVisible(e.target.checked)} />
-                Client can view this message (uncheck to keep it in the file without sending \u2014 you can share it later)
+                Client can view this message (uncheck to keep it in the file without sending — you can share it later)
               </label>
             )}
           </div>
@@ -710,12 +710,12 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <p className="text-graphite-900 font-medium">{c.subject}</p>
                     {c.type === "secure_message" && (
-                      <Badge tone={c.clientVisible === false ? "gray" : "green"}>{c.clientVisible === false ? "Redacted \u2014 internal only" : "Client can view"}</Badge>
+                      <Badge tone={c.clientVisible === false ? "gray" : "green"}>{c.clientVisible === false ? "Redacted — internal only" : "Client can view"}</Badge>
                     )}
                   </div>
                   <p className="text-graphite-600">{c.body}</p>
                   <div className="flex items-center justify-between gap-2 flex-wrap mt-1">
-                    <p className="text-xs text-graphite-400">{c.from} \u2192 {c.to} \u00b7 {new Date(c.createdAt).toLocaleString()}</p>
+                    <p className="text-xs text-graphite-400">{c.from} → {c.to} · {new Date(c.createdAt).toLocaleString()}</p>
                     {c.type === "secure_message" && (
                       <button className="text-xs text-teal-600 hover:underline" onClick={() => toggleCommunicationClientVisible(c.id)}>
                         {c.clientVisible === false ? "Restore client access" : "Redact from client"}
@@ -752,14 +752,14 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
             <ul className="text-sm text-graphite-600 space-y-1.5">
               <li><span className="text-graphite-400">Name:</span> {client.fullName}</li>
               <li><span className="text-graphite-400">Email:</span> {client.email}</li>
-              <li><span className="text-graphite-400">Phone:</span> {client.phone || "\u2014"}</li>
-              <li><span className="text-graphite-400">Address:</span> {client.address || "\u2014"}</li>
+              <li><span className="text-graphite-400">Phone:</span> {client.phone || "—"}</li>
+              <li><span className="text-graphite-400">Address:</span> {client.address || "—"}</li>
               <li><span className="text-graphite-400">Portal status:</span> {client.portalStatus.replace(/_/g, " ")}</li>
               <li className="pt-2">
                 <span className="text-graphite-400">Consent history:</span>
                 <ul className="mt-1 space-y-1">
                   {client.consentHistory.map((c, i) => (
-                    <li key={i} className="text-xs">{c.label} \u2014 {c.date} {c.granted ? "(granted)" : "(not granted)"}</li>
+                    <li key={i} className="text-xs">{c.label} — {c.date} {c.granted ? "(granted)" : "(not granted)"}</li>
                   ))}
                 </ul>
               </li>
@@ -806,7 +806,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                             {e.clientSyncStatus === "update_pending" && <Badge tone="red">Client update pending</Badge>}
                           </div>
                         </div>
-                        <p className="text-xs text-graphite-500 mt-1">{e.date}{e.time ? ` at ${e.time}` : ""}{e.location ? ` \u00b7 ${e.location}` : ""}</p>
+                        <p className="text-xs text-graphite-500 mt-1">{e.date}{e.time ? ` at ${e.time}` : ""}{e.location ? ` · ${e.location}` : ""}</p>
                         {e.description && <p className="text-xs text-graphite-600 mt-1">{e.description}</p>}
                         {e.internalNotes && (
                           <p className="text-xs text-graphite-400 mt-1 italic">Internal note (never shared): {e.internalNotes}</p>
@@ -836,7 +836,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                 {cancelledMatterEvents.map((e) => (
                   <li key={e.id} className="text-sm border-b border-graphite-100 pb-2 opacity-70">
                     <p className="font-medium text-graphite-900 line-through">{e.title}</p>
-                    <p className="text-xs text-graphite-500">{e.date}{e.time ? ` at ${e.time}` : ""} \u00b7 {e.sharedWithClient ? (e.cancelledNotifiedClient ? "Client notified" : "Client not notified") : "Was internal only"}</p>
+                    <p className="text-xs text-graphite-500">{e.date}{e.time ? ` at ${e.time}` : ""} · {e.sharedWithClient ? (e.cancelledNotifiedClient ? "Client notified" : "Client not notified") : "Was internal only"}</p>
                   </li>
                 ))}
               </ul>
@@ -864,7 +864,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               {matter.notes.map((n) => (
                 <li key={n.id} className="text-sm border-b border-graphite-100 pb-2">
                   <p className="text-graphite-600">{n.body}</p>
-                  <p className="text-xs text-graphite-400">{n.authorName} \u00b7 {new Date(n.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-graphite-400">{n.authorName} · {new Date(n.createdAt).toLocaleString()}</p>
                 </li>
               ))}
             </ul>
@@ -885,7 +885,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
                   <tr key={p.id}>
                     <td>{p.name}</td>
                     <td>{p.role.replace(/_/g, " ")}</td>
-                    <td>{p.contactInfo || "\u2014"}</td>
+                    <td>{p.contactInfo || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -929,7 +929,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
               {matterActivity.map((a) => (
                 <li key={a.id} className="text-sm border-b border-graphite-100 pb-2">
                   <p className="text-graphite-700">{a.message}</p>
-                  <p className="text-xs text-graphite-400">{a.actor} \u00b7 {new Date(a.timestamp).toLocaleString()}</p>
+                  <p className="text-xs text-graphite-400">{a.actor} · {new Date(a.timestamp).toLocaleString()}</p>
                 </li>
               ))}
             </ul>
@@ -941,8 +941,8 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
       <Modal open={!!caseUpdatedModalChangeId} onClose={() => setCaseUpdatedModalChangeId(null)} title="Case Updated" width="sm">
         <p className="text-sm text-graphite-600 mb-4">Would you like JusticeIQ to summarize these changes and prepare an update for the client?</p>
         <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => setCaseUpdatedModalChangeId(null)}>No \u2014 do not share</Button>
-          <Button onClick={handlePrepareClientUpdate}>Yes \u2014 prepare client update</Button>
+          <Button variant="ghost" onClick={() => setCaseUpdatedModalChangeId(null)}>No — do not share</Button>
+          <Button onClick={handlePrepareClientUpdate}>Yes — prepare client update</Button>
         </div>
       </Modal>
 
@@ -957,7 +957,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
           <Button variant="ghost" onClick={handleRegenerate}>Regenerate</Button>
           <Button variant="outline" onClick={() => { setReviewModalOpen(false); setReviewChangeId(null); }}>Cancel</Button>
           <Button onClick={handleSendToClient} disabled={sendingUpdate || !reviewMessage.trim()}>
-            {sendingUpdate ? "Sending\u2026" : "Send to client"}
+            {sendingUpdate ? "Sending…" : "Send to client"}
           </Button>
         </div>
       </Modal>
@@ -971,7 +971,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
         <ul className="text-xs text-graphite-500 space-y-1 mb-4">
           <li>Date: {new Date(sentConfirmation?.sentAt ?? Date.now()).toLocaleDateString()}</li>
           <li>Time: {new Date(sentConfirmation?.sentAt ?? Date.now()).toLocaleTimeString()}</li>
-          <li>Client: {client?.fullName ?? "\u2014"}</li>
+          <li>Client: {client?.fullName ?? "—"}</li>
           <li>Case: {matter.matterName}</li>
           <li>Sending lawyer: Sarah Kim</li>
           <li>Delivery status: {sentConfirmation?.deliveryStatus}</li>
@@ -1013,7 +1013,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
             <input value={dateLocation} onChange={(e) => setDateLocation(e.target.value)} className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm" />
           </label>
           <label className="text-xs text-graphite-600 block">
-            Internal Notes (optional \u2014 never automatically shared with the client)
+            Internal Notes (optional — never automatically shared with the client)
             <textarea value={dateInternalNotes} onChange={(e) => setDateInternalNotes(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm" />
           </label>
         </div>
@@ -1026,16 +1026,16 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
       <Modal open={!!shareDateModalEventId} onClose={() => setShareDateModalEventId(null)} title="Date Added" width="sm">
         <p className="text-sm text-graphite-600 mb-4">Would you like to share this important date with the client?</p>
         <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => handleShareDate(false)}>No \u2014 keep internal</Button>
-          <Button onClick={() => handleShareDate(true)}>Yes \u2014 share with client</Button>
+          <Button variant="ghost" onClick={() => handleShareDate(false)}>No — keep internal</Button>
+          <Button onClick={() => handleShareDate(true)}>Yes — share with client</Button>
         </div>
       </Modal>
 
       <Modal open={!!updateClientModalEventId} onClose={() => setUpdateClientModalEventId(null)} title="Update Client?" width="sm">
         <p className="text-sm text-graphite-600 mb-4">This date was previously shared with the client. Would you like to update the client's JusticeChamp calendar?</p>
         <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => handleUpdateClient(false)}>No \u2014 keep client version</Button>
-          <Button onClick={() => handleUpdateClient(true)}>Yes \u2014 update client</Button>
+          <Button variant="ghost" onClick={() => handleUpdateClient(false)}>No — keep client version</Button>
+          <Button onClick={() => handleUpdateClient(true)}>Yes — update client</Button>
         </div>
       </Modal>
 
@@ -1057,8 +1057,8 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
             <>
               <p className="text-sm text-graphite-600 mb-4">This date was shared with the client. Cancel it and notify them?</p>
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" onClick={() => handleCancelEvent(false)}>No \u2014 do not change client calendar</Button>
-                <Button variant="danger" onClick={() => handleCancelEvent(true)}>Yes \u2014 cancel and notify client</Button>
+                <Button variant="ghost" onClick={() => handleCancelEvent(false)}>No — do not change client calendar</Button>
+                <Button variant="danger" onClick={() => handleCancelEvent(true)}>Yes — cancel and notify client</Button>
               </div>
             </>
           );
