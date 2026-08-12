@@ -125,3 +125,33 @@ export function MiniLineChart({ points, width = 320, height = 100 }: { points: n
     </svg>
   );
 }
+
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  width = "md",
+}: {
+  open: boolean;
+  onClose?: () => void;
+  title?: string;
+  children: React.ReactNode;
+  width?: "sm" | "md" | "lg";
+}) {
+  if (!open) return null;
+  const widths: Record<string, string> = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl" };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-graphite-950/50" onClick={onClose} />
+      <div className={clsx("relative w-full bg-white rounded-xl2 shadow-xl border border-graphite-100 max-h-[90vh] overflow-y-auto", widths[width])}>
+        {title && (
+          <div className="px-5 py-4 border-b border-graphite-100">
+            <h2 className="font-semibold text-graphite-900">{title}</h2>
+          </div>
+        )}
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}

@@ -253,6 +253,13 @@ export interface CalendarEvent {
   time: string;
   lawyerId: string;
   description: string;
+  location?: string;
+  internalNotes?: string;
+  sharedWithClient?: boolean;
+  clientSyncStatus?: "internal" | "shared" | "update_pending";
+  cancelled?: boolean;
+  cancelledNotifiedClient?: boolean;
+  lastSharedAt?: string;
 }
 
 export interface DamageItem {
@@ -374,4 +381,42 @@ export interface TaskTemplateItem {
   name: string;
   appliesTo: ClaimCategory | "both";
   tasks: string[];
+}
+
+// --- Feature: Case Change -> Client Update (JusticeIQ -> JusticeChamp bridge) ---
+
+export type CaseChangeCategory = "documents" | "status" | "stage" | "deadline" | "communication" | "other";
+
+export interface CaseChangeEntry {
+  id: string;
+  matterId: string;
+  summary: string;
+  detail: string;
+  category: CaseChangeCategory;
+  internalOnly: boolean;
+  createdBy: string;
+  createdAt: string;
+  clientUpdateId?: string;
+}
+
+export type ClientUpdateDeliveryStatus = "sent" | "failed" | "not_sent";
+
+export interface ClientUpdate {
+  id: string;
+  matterId: string;
+  clientId: string;
+  caseChangeIds: string[];
+  subject: string;
+  message: string;
+  sendingLawyer: string;
+  sentAt: string;
+  deliveryStatus: ClientUpdateDeliveryStatus;
+}
+
+// --- Feature: Shared Case Calendar bridge metadata ---
+
+export interface BridgeDeliveryResult {
+  ok: boolean;
+  deliveryStatus: ClientUpdateDeliveryStatus;
+  error?: string;
 }

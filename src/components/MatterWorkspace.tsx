@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Card, Badge, Button, ProgressBar, StatCard, EmptyState, InfoBanner } from "@/components/ui";
-import { PI_STAGES, EMPLOYMENT_STAGES } from "@/lib/types";
+import { Card, Badge, Button, ProgressBar, StatCard, EmptyState, InfoBanner, Modal } from "@/components/ui";
+import { PI_STAGES, EMPLOYMENT_STAGES, CaseChangeCategory, CalendarEventType } from "@/lib/types";
 import { useAppState } from "@/lib/store";
 
 export type MatterTab =
   | "overview"
   | "documents"
+  | "changes"
   | "timeline"
   | "tasks"
   | "communications"
@@ -23,16 +24,41 @@ export type MatterTab =
 const TABS: { key: MatterTab; label: string; href: (id: string) => string }[] = [
   { key: "overview", label: "Overview", href: (id) => `/matters/${id}` },
   { key: "documents", label: "Documents", href: (id) => `/matters/${id}/documents` },
+  { key: "changes", label: "Changes", href: (id) => `/matters/${id}?tab=changes` },
   { key: "timeline", label: "Timeline", href: (id) => `/matters/${id}/timeline` },
   { key: "tasks", label: "Tasks", href: (id) => `/matters/${id}/tasks` },
   { key: "communications", label: "Communications", href: (id) => `/matters/${id}/communications` },
   { key: "billing", label: "Billing", href: (id) => `/matters/${id}/billing` },
   { key: "client", label: "Client", href: (id) => `/matters/${id}?tab=client` },
-  { key: "calendar", label: "Calendar", href: (id) => `/matters/${id}?tab=calendar` },
+  { key: "calendar", label: "Case Calendar", href: (id) => `/matters/${id}?tab=calendar` },
   { key: "notes", label: "Notes", href: (id) => `/matters/${id}?tab=notes` },
   { key: "parties", label: "Parties", href: (id) => `/matters/${id}?tab=parties` },
   { key: "damages", label: "Damages", href: (id) => `/matters/${id}?tab=damages` },
   { key: "activity", label: "Activity Log", href: (id) => `/matters/${id}?tab=activity` },
+];
+
+const CALENDAR_EVENT_TYPES: { value: CalendarEventType; label: string }[] = [
+  { value: "client_meeting", label: "Meeting with client" },
+  { value: "mediation", label: "Mediation" },
+  { value: "hearing", label: "Hearing" },
+  { value: "trial", label: "Trial" },
+  { value: "discovery", label: "Discovery deadline" },
+  { value: "filing_deadline", label: "Filing deadline" },
+  { value: "court_deadline", label: "Court deadline" },
+  { value: "limitation_period", label: "Limitation period" },
+  { value: "medical_appointment", label: "Medical appointment" },
+  { value: "consultation", label: "Consultation" },
+  { value: "internal_review", label: "Internal review" },
+  { value: "follow_up", label: "Follow-up" },
+];
+
+const CHANGE_CATEGORIES: { value: CaseChangeCategory; label: string }[] = [
+  { value: "documents", label: "Documents" },
+  { value: "status", label: "Case status" },
+  { value: "stage", label: "Case stage" },
+  { value: "deadline", label: "Deadline" },
+  { value: "communication", label: "Communication" },
+  { value: "other", label: "Other" },
 ];
 
 function riskTone(risk: string): "green" | "amber" | "red" {
@@ -43,9 +69,11 @@ function riskTone(risk: string): "green" | "amber" | "red" {
 
 export function MatterWorkspace({ matterId, activeTab }: { matterId: string; activeTab: MatterTab }) {
   const {
-    getMatter, clients, team, tasks, communications, calendarEvents, activityLog,
+    getMatter, clients, team, tasks, communications, calendarEvents, activityLog, caseChanges, clientUpdates,
     addMatterNote, addMatterDocument, addCommunication, addTask, updateTaskStatus, updateMatterStage,
     toggleDocumentClientVisible, markDocumentUpdated, notifyClientOfDocumentUpdate, toggleCommunicationClientVisible,
+    logCaseChange, draftClientUpdateMessage, sendClientUpdate,
+    addCaseCalendarEvent, shareCalendarEventWithClient, updateCaseCalendarEvent, syncCalendarEventUpdate, cancelCaseCalendarEvent,
   } = useAppState();
 
   const [noteBody, setNoteBody] = useState("");
@@ -60,6 +88,35 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
 
   const [updatingDocId, setUpdatingDocId] = useState<string | null>(null);
   const [updateNote, setUpdateNote] = useState("");
+
+  // --- Feature 1: Case Change -> Client Update ---
+  const [changeSummary, setChangeSummary] = useState("");
+  const [changeDetail, setChangeDetail] = useState("");
+  const [changeCategory, setChangeCategory] = useState<CaseChangeCategory>("documents");
+  const [changeInternalOnly, setChangeInternalOnly] = useState(false);
+  const [caseUpdatedModalChangeId, setCaseUpdatedModalChangeId] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState("");
+  const [reviewChangeId, setReviewChangeId] = useState<string | null>(null);
+  const [sendingUpdate, setSendingUpdate] = useState(false);
+  const [sentConfirmation, setSentConfirmation] = useState<{ deliveryStatus: string; sentAt: string } | null>(null);
+
+  // --- Feature 2: Shared Case Calendar ---
+  const [addDateModalOpen, setAddDateModalOpen] = useState(false);
+  const [dateTitle, setDateTitle] = useState("");
+  const [dateType, setDateType] = useState<CalendarEventType>("client_meeting");
+  const [dateDate, setDateDate] = useState("");
+  const [dateTime, setDateTime] = useState("");
+  const [dateDescription, setDateDescription] = useState("");
+  const [dateLocation, setDateLocation] = useState("");
+  const [dateInternalNotes, setDateInternalNotes] = useState("");
+  const [shareDateModalEventId, setShareDateModalEventId] = useState<string | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [updateClientModalEventId, setUpdateClientModalEventId] = useState<string | null>(null);
+  const [cancelModalEventId, setCancelModalEventId] = useState<string | null>(null);
+  const [bridgeNotice, setBridgeNotice] = useState<string | null>(null);
 
   const matter = getMatter(matterId);
   const tab = activeTab || "overview";
@@ -77,7 +134,9 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
   const teamMembers = team.filter((t) => matter.teamMemberIds.includes(t.id));
   const matterTasks = tasks.filter((t) => t.matterId === matter.id);
   const matterComms = communications.filter((c) => c.matterId === matter.id);
-  const matterEvents = calendarEvents.filter((e) => e.matterId === matter.id);
+  const matterEvents = calendarEvents.filter((e) => e.matterId === matter.id && !e.cancelled);
+  const cancelledMatterEvents = calendarEvents.filter((e) => e.matterId === matter.id && e.cancelled);
+  const matterChanges = caseChanges.filter((c) => c.matterId === matter.id);
   const openTasks = matterTasks.filter((t) => t.status !== "complete" && t.status !== "cancelled");
   const clientUploads = matter.documents.filter((d) => d.fromClient);
 
@@ -169,6 +228,121 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
     markDocumentUpdated(matter!.id, docId, updateNote.trim());
     setUpdatingDocId(null);
     setUpdateNote("");
+  }
+
+  // --- Feature 1 handlers: Case Change -> Client Update ---
+
+  function handleSaveChange() {
+    if (!changeSummary.trim()) return;
+    const entry = logCaseChange(matter!.id, {
+      summary: changeSummary.trim(),
+      detail: changeDetail.trim(),
+      category: changeCategory,
+      internalOnly: changeInternalOnly,
+    });
+    setChangeSummary("");
+    setChangeDetail("");
+    setChangeCategory("documents");
+    setChangeInternalOnly(false);
+    if (!entry.internalOnly) {
+      setCaseUpdatedModalChangeId(entry.id);
+    }
+  }
+
+  function handlePrepareClientUpdate() {
+    if (!caseUpdatedModalChangeId) return;
+    const draft = draftClientUpdateMessage(matter!.id, [caseUpdatedModalChangeId]);
+    setReviewMessage(draft);
+    setReviewChangeId(caseUpdatedModalChangeId);
+    setCaseUpdatedModalChangeId(null);
+    setReviewModalOpen(true);
+  }
+
+  function handleRegenerate() {
+    if (!reviewChangeId) return;
+    setReviewMessage(draftClientUpdateMessage(matter!.id, [reviewChangeId]));
+  }
+
+  async function handleSendToClient() {
+    if (!reviewChangeId || !reviewMessage.trim()) return;
+    setSendingUpdate(true);
+    const result = await sendClientUpdate(matter!.id, [reviewChangeId], reviewMessage.trim());
+    setSendingUpdate(false);
+    setReviewModalOpen(false);
+    setReviewChangeId(null);
+    setSentConfirmation({ deliveryStatus: result.deliveryStatus, sentAt: new Date().toISOString() });
+  }
+
+  // --- Feature 2 handlers: Shared Case Calendar ---
+
+  function handleOpenAddDate() {
+    setDateTitle("");
+    setDateType("client_meeting");
+    setDateDate("");
+    setDateTime("");
+    setDateDescription("");
+    setDateLocation("");
+    setDateInternalNotes("");
+    setAddDateModalOpen(true);
+  }
+
+  function handleSaveDate() {
+    if (!dateTitle.trim() || !dateDate) return;
+    const event = addCaseCalendarEvent(matter!.id, {
+      title: dateTitle.trim(),
+      type: dateType,
+      date: dateDate,
+      time: dateTime,
+      description: dateDescription.trim(),
+      location: dateLocation.trim() || undefined,
+      internalNotes: dateInternalNotes.trim() || undefined,
+    });
+    setAddDateModalOpen(false);
+    setShareDateModalEventId(event.id);
+  }
+
+  async function handleShareDate(share: boolean) {
+    const eventId = shareDateModalEventId;
+    setShareDateModalEventId(null);
+    if (!eventId || !share) return;
+    const result = await shareCalendarEventWithClient(matter!.id, eventId);
+    setBridgeNotice(result.ok ? "Shared with the client's JusticeChamp Important Dates calendar." : `Could not reach JusticeChamp: ${result.error ?? "delivery failed"}`);
+  }
+
+  function handleStartEditEvent(eventId: string) {
+    const event = calendarEvents.find((e) => e.id === eventId);
+    if (!event) return;
+    setEditingEventId(eventId);
+    setEditDate(event.date);
+    setEditTime(event.time);
+  }
+
+  function handleSaveEditEvent() {
+    if (!editingEventId) return;
+    const event = calendarEvents.find((e) => e.id === editingEventId);
+    updateCaseCalendarEvent(matter!.id, editingEventId, { date: editDate, time: editTime });
+    setEditingEventId(null);
+    if (event?.sharedWithClient) {
+      setUpdateClientModalEventId(editingEventId);
+    }
+  }
+
+  async function handleUpdateClient(update: boolean) {
+    const eventId = updateClientModalEventId;
+    setUpdateClientModalEventId(null);
+    if (!eventId || !update) return;
+    const result = await syncCalendarEventUpdate(matter!.id, eventId);
+    setBridgeNotice(result.ok ? "Client's JusticeChamp calendar updated." : `Could not reach JusticeChamp: ${result.error ?? "delivery failed"}`);
+  }
+
+  async function handleCancelEvent(notify: boolean) {
+    const eventId = cancelModalEventId;
+    setCancelModalEventId(null);
+    if (!eventId) return;
+    const result = await cancelCaseCalendarEvent(matter!.id, eventId, notify);
+    if (notify && result) {
+      setBridgeNotice(result.ok ? "Client notified of cancellation." : `Could not reach JusticeChamp: ${result.error ?? "delivery failed"}`);
+    }
   }
 
   return (
@@ -361,6 +535,70 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
         </div>
       )}
 
+      {tab === "changes" && (
+        <div className="space-y-4">
+          <Card>
+            <h2 className="font-semibold text-graphite-900 text-sm mb-1">Log a case change</h2>
+            <p className="text-xs text-graphite-500 mb-3">
+              Record a meaningful change to this case. Unless marked internal-only, saving will offer to prepare a
+              plain-language client update \u2014 nothing is sent until you review and approve it.
+            </p>
+            <div className="space-y-2">
+              <input
+                value={changeSummary}
+                onChange={(e) => setChangeSummary(e.target.value)}
+                placeholder="What changed? (e.g. Defendant's insurer provided additional documents)"
+                className="w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm"
+              />
+              <textarea
+                value={changeDetail}
+                onChange={(e) => setChangeDetail(e.target.value)}
+                placeholder="Internal detail (may include privileged/strategy notes \u2014 never shared with the client)"
+                rows={2}
+                className="w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm"
+              />
+              <div className="flex flex-wrap items-center gap-3">
+                <select value={changeCategory} onChange={(e) => setChangeCategory(e.target.value as CaseChangeCategory)} className="rounded-lg border border-graphite-200 px-2 py-2 text-sm">
+                  {CHANGE_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+                <label className="flex items-center gap-1.5 text-xs text-graphite-600">
+                  <input type="checkbox" checked={changeInternalOnly} onChange={(e) => setChangeInternalOnly(e.target.checked)} />
+                  Internal only \u2014 never eligible for a client update
+                </label>
+                <Button size="sm" onClick={handleSaveChange} disabled={!changeSummary.trim()}>Save change</Button>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <h2 className="font-semibold text-graphite-900 text-sm mb-3">Case changes ({matterChanges.length})</h2>
+            {matterChanges.length === 0 ? (
+              <EmptyState title="No case changes logged" description="Meaningful changes you log for this case will appear here." />
+            ) : (
+              <ul className="space-y-3">
+                {matterChanges.map((c) => {
+                  const linkedUpdate = clientUpdates.find((u) => u.id === c.clientUpdateId);
+                  return (
+                    <li key={c.id} className="border-b border-graphite-100 pb-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-graphite-900">{c.summary}</p>
+                        <div className="flex gap-1.5">
+                          <Badge tone="gray">{c.category.replace(/_/g, " ")}</Badge>
+                          {c.internalOnly && <Badge tone="red">Internal only</Badge>}
+                          {linkedUpdate && <Badge tone="green">Client update sent</Badge>}
+                        </div>
+                      </div>
+                      {c.detail && <p className="text-xs text-graphite-500 mt-1">{c.detail}</p>}
+                      <p className="text-xs text-graphite-400 mt-1">{c.createdBy} \u00b7 {new Date(c.createdAt).toLocaleString()}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Card>
+        </div>
+      )}
+
       {tab === "timeline" && (
         <Card>
           <h2 className="font-semibold text-graphite-900 text-sm mb-3">Timeline ({matter.timeline.length})</h2>
@@ -426,8 +664,9 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
         <Card>
           <h2 className="font-semibold text-graphite-900 text-sm mb-1">Communications ({matterComms.length})</h2>
           <p className="text-xs text-graphite-500 mb-3">
-            Secure messages are simulated delivery to the client's JusticeChamp app \u2014 the two apps don't share a live
-            connection yet. You can redact a message from client view at any time.
+            Secure messages are recorded here and delivered to the client's JusticeChamp app once sent. You can redact
+            a message from client view at any time. To send a plain-language case update backed by an AI draft and
+            review step, use the Changes tab.
           </p>
 
           <div className="rounded-lg bg-graphite-50 border border-graphite-100 p-3 mb-4 space-y-2">
@@ -530,21 +769,80 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
       )}
 
       {tab === "calendar" && (
-        <Card>
-          <h2 className="font-semibold text-graphite-900 text-sm mb-3">Calendar ({matterEvents.length})</h2>
-          {matterEvents.length === 0 ? (
-            <EmptyState title="No calendar events" description="Deadlines and meetings for this matter will appear here." />
-          ) : (
-            <ul className="space-y-2">
-              {matterEvents.map((e) => (
-                <li key={e.id} className="text-sm border-b border-graphite-100 pb-2">
-                  <p className="font-medium text-graphite-900">{e.title}</p>
-                  <p className="text-xs text-graphite-500">{e.date} at {e.time} \u00b7 {e.type.replace(/_/g, " ")}</p>
-                </li>
-              ))}
-            </ul>
+        <div className="space-y-4">
+          {bridgeNotice && (
+            <InfoBanner tone="teal">
+              {bridgeNotice}
+              <button className="ml-2 text-xs underline" onClick={() => setBridgeNotice(null)}>Dismiss</button>
+            </InfoBanner>
           )}
-        </Card>
+          <Card>
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <h2 className="font-semibold text-graphite-900 text-sm">Case Calendar ({matterEvents.length})</h2>
+              <Button size="sm" onClick={handleOpenAddDate}>+ Add Important Date</Button>
+            </div>
+            {matterEvents.length === 0 ? (
+              <EmptyState title="No calendar events" description="Deadlines and meetings for this matter will appear here." />
+            ) : (
+              <ul className="space-y-2">
+                {matterEvents.map((e) => (
+                  <li key={e.id} className="border border-graphite-100 rounded-lg p-3">
+                    {editingEventId === e.id ? (
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          <input type="date" value={editDate} onChange={(ev) => setEditDate(ev.target.value)} className="rounded-lg border border-graphite-200 px-2 py-1.5 text-xs" />
+                          <input type="time" value={editTime} onChange={(ev) => setEditTime(ev.target.value)} className="rounded-lg border border-graphite-200 px-2 py-1.5 text-xs" />
+                          <Button size="sm" onClick={handleSaveEditEvent}>Save</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingEventId(null)}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-medium text-graphite-900">{e.title}</p>
+                          <div className="flex gap-1.5">
+                            <Badge tone="gray">{e.type.replace(/_/g, " ")}</Badge>
+                            {e.sharedWithClient ? <Badge tone="green">Shared with client</Badge> : <Badge tone="amber">Internal</Badge>}
+                            {e.clientSyncStatus === "update_pending" && <Badge tone="red">Client update pending</Badge>}
+                          </div>
+                        </div>
+                        <p className="text-xs text-graphite-500 mt-1">{e.date}{e.time ? ` at ${e.time}` : ""}{e.location ? ` \u00b7 ${e.location}` : ""}</p>
+                        {e.description && <p className="text-xs text-graphite-600 mt-1">{e.description}</p>}
+                        {e.internalNotes && (
+                          <p className="text-xs text-graphite-400 mt-1 italic">Internal note (never shared): {e.internalNotes}</p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Button size="sm" variant="outline" onClick={() => handleStartEditEvent(e.id)}>Edit date/time</Button>
+                          {!e.sharedWithClient && (
+                            <Button size="sm" variant="outline" onClick={() => setShareDateModalEventId(e.id)}>Share with client</Button>
+                          )}
+                          {e.clientSyncStatus === "update_pending" && (
+                            <Button size="sm" onClick={() => setUpdateClientModalEventId(e.id)}>Sync update to client</Button>
+                          )}
+                          <Button size="sm" variant="danger" onClick={() => setCancelModalEventId(e.id)}>Cancel date</Button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          {cancelledMatterEvents.length > 0 && (
+            <Card>
+              <h2 className="font-semibold text-graphite-900 text-sm mb-3">Cancelled dates ({cancelledMatterEvents.length})</h2>
+              <ul className="space-y-2">
+                {cancelledMatterEvents.map((e) => (
+                  <li key={e.id} className="text-sm border-b border-graphite-100 pb-2 opacity-70">
+                    <p className="font-medium text-graphite-900 line-through">{e.title}</p>
+                    <p className="text-xs text-graphite-500">{e.date}{e.time ? ` at ${e.time}` : ""} \u00b7 {e.sharedWithClient ? (e.cancelledNotifiedClient ? "Client notified" : "Client not notified") : "Was internal only"}</p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
       )}
 
       {tab === "notes" && (
@@ -638,6 +936,134 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
           )}
         </Card>
       )}
+
+      {/* Feature 1: Case Change -> Client Update modals */}
+      <Modal open={!!caseUpdatedModalChangeId} onClose={() => setCaseUpdatedModalChangeId(null)} title="Case Updated" width="sm">
+        <p className="text-sm text-graphite-600 mb-4">Would you like JusticeIQ to summarize these changes and prepare an update for the client?</p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={() => setCaseUpdatedModalChangeId(null)}>No \u2014 do not share</Button>
+          <Button onClick={handlePrepareClientUpdate}>Yes \u2014 prepare client update</Button>
+        </div>
+      </Modal>
+
+      <Modal open={reviewModalOpen} onClose={() => { setReviewModalOpen(false); setReviewChangeId(null); }} title="Review Client Update" width="md">
+        <textarea
+          value={reviewMessage}
+          onChange={(e) => setReviewMessage(e.target.value)}
+          rows={9}
+          className="w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm mb-3"
+        />
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button variant="ghost" onClick={handleRegenerate}>Regenerate</Button>
+          <Button variant="outline" onClick={() => { setReviewModalOpen(false); setReviewChangeId(null); }}>Cancel</Button>
+          <Button onClick={handleSendToClient} disabled={sendingUpdate || !reviewMessage.trim()}>
+            {sendingUpdate ? "Sending\u2026" : "Send to client"}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal open={!!sentConfirmation} onClose={() => setSentConfirmation(null)} title="Client Update Sent" width="sm">
+        {sentConfirmation?.deliveryStatus === "sent" ? (
+          <p className="text-sm text-graphite-600 mb-4">The update has been added to the client's JusticeChamp Notices.</p>
+        ) : (
+          <p className="text-sm text-red-600 mb-4">The update was saved to this case, but delivery to JusticeChamp failed. Make sure the JusticeChamp app is running, then try sending again from the Changes tab.</p>
+        )}
+        <ul className="text-xs text-graphite-500 space-y-1 mb-4">
+          <li>Date: {new Date(sentConfirmation?.sentAt ?? Date.now()).toLocaleDateString()}</li>
+          <li>Time: {new Date(sentConfirmation?.sentAt ?? Date.now()).toLocaleTimeString()}</li>
+          <li>Client: {client?.fullName ?? "\u2014"}</li>
+          <li>Case: {matter.matterName}</li>
+          <li>Sending lawyer: Sarah Kim</li>
+          <li>Delivery status: {sentConfirmation?.deliveryStatus}</li>
+        </ul>
+        <div className="flex justify-end">
+          <Button onClick={() => setSentConfirmation(null)}>Done</Button>
+        </div>
+      </Modal>
+
+      {/* Feature 2: Shared Case Calendar modals */}
+      <Modal open={addDateModalOpen} onClose={() => setAddDateModalOpen(false)} title="Add Case Date" width="md">
+        <div className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="text-xs text-graphite-600">
+              Date
+              <input type="date" value={dateDate} onChange={(e) => setDateDate(e.target.value)} className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm" />
+            </label>
+            <label className="text-xs text-graphite-600">
+              Time (optional)
+              <input type="time" value={dateTime} onChange={(e) => setDateTime(e.target.value)} className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm" />
+            </label>
+          </div>
+          <label className="text-xs text-graphite-600 block">
+            Event
+            <input value={dateTitle} onChange={(e) => setDateTitle(e.target.value)} placeholder="Discovery Deadline" className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm" />
+          </label>
+          <label className="text-xs text-graphite-600 block">
+            Event type
+            <select value={dateType} onChange={(e) => setDateType(e.target.value as CalendarEventType)} className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm">
+              {CALENDAR_EVENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </label>
+          <label className="text-xs text-graphite-600 block">
+            Description
+            <textarea value={dateDescription} onChange={(e) => setDateDescription(e.target.value)} rows={2} placeholder="Documents must be exchanged between the parties by this date." className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm" />
+          </label>
+          <label className="text-xs text-graphite-600 block">
+            Location / Meeting Link (optional)
+            <input value={dateLocation} onChange={(e) => setDateLocation(e.target.value)} className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm" />
+          </label>
+          <label className="text-xs text-graphite-600 block">
+            Internal Notes (optional \u2014 never automatically shared with the client)
+            <textarea value={dateInternalNotes} onChange={(e) => setDateInternalNotes(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-graphite-200 px-3 py-2 text-sm" />
+          </label>
+        </div>
+        <div className="flex gap-2 justify-end mt-4">
+          <Button variant="outline" onClick={() => setAddDateModalOpen(false)}>Cancel</Button>
+          <Button onClick={handleSaveDate} disabled={!dateTitle.trim() || !dateDate}>Save date</Button>
+        </div>
+      </Modal>
+
+      <Modal open={!!shareDateModalEventId} onClose={() => setShareDateModalEventId(null)} title="Date Added" width="sm">
+        <p className="text-sm text-graphite-600 mb-4">Would you like to share this important date with the client?</p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={() => handleShareDate(false)}>No \u2014 keep internal</Button>
+          <Button onClick={() => handleShareDate(true)}>Yes \u2014 share with client</Button>
+        </div>
+      </Modal>
+
+      <Modal open={!!updateClientModalEventId} onClose={() => setUpdateClientModalEventId(null)} title="Update Client?" width="sm">
+        <p className="text-sm text-graphite-600 mb-4">This date was previously shared with the client. Would you like to update the client's JusticeChamp calendar?</p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={() => handleUpdateClient(false)}>No \u2014 keep client version</Button>
+          <Button onClick={() => handleUpdateClient(true)}>Yes \u2014 update client</Button>
+        </div>
+      </Modal>
+
+      <Modal open={!!cancelModalEventId} onClose={() => setCancelModalEventId(null)} title="Notify Client of Cancellation?" width="sm">
+        {(() => {
+          const event = calendarEvents.find((e) => e.id === cancelModalEventId);
+          if (!event?.sharedWithClient) {
+            return (
+              <>
+                <p className="text-sm text-graphite-600 mb-4">This date was never shared with the client. Cancel it internally?</p>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="ghost" onClick={() => setCancelModalEventId(null)}>Back</Button>
+                  <Button variant="danger" onClick={() => handleCancelEvent(false)}>Cancel date</Button>
+                </div>
+              </>
+            );
+          }
+          return (
+            <>
+              <p className="text-sm text-graphite-600 mb-4">This date was shared with the client. Cancel it and notify them?</p>
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" onClick={() => handleCancelEvent(false)}>No \u2014 do not change client calendar</Button>
+                <Button variant="danger" onClick={() => handleCancelEvent(true)}>Yes \u2014 cancel and notify client</Button>
+              </div>
+            </>
+          );
+        })()}
+      </Modal>
     </div>
   );
 }

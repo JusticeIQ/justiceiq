@@ -2,13 +2,14 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
-  ActivityLogItem, CalendarEvent, Client, ClaimCategory, Communication, Consultation, ConsultationMeetingType,
-  Contact, DeclineReason, Firm, Matter, MatterDocument, MatterNote, MatterParty, MatterTask, Notification,
-  Referral, ReferralNote, TeamMember,
+  ActivityLogItem, BridgeDeliveryResult, CalendarEvent, CalendarEventType, CaseChangeCategory, CaseChangeEntry,
+  Client, ClaimCategory, ClientUpdate, Communication, Consultation, ConsultationMeetingType, Contact, DeclineReason,
+  Firm, Matter, MatterDocument, MatterNote, MatterParty, MatterTask, Notification, Referral, ReferralNote,
+  TeamMember,
 } from "./types";
 import {
-  ACTIVITY_LOG, CALENDAR_EVENTS, CLIENTS, COMMUNICATIONS, CONTACTS, FIRM, MATTERS, NOTIFICATIONS, REFERRALS,
-  TASKS, TEAM,
+  ACTIVITY_LOG, CALENDAR_EVENTS, CASE_CHANGES, CLIENTS, CLIENT_UPDATES, COMMUNICATIONS, CONTACTS, FIRM, MATTERS,
+  NOTIFICATIONS, REFERRALS, TASKS, TEAM,
 } from "./demo-data";
 
 const STORAGE_KEY = "justiceiq-demo-state-v1";
@@ -27,10 +28,12 @@ interface AppState {
   communications: Communication[];
   notifications: Notification[];
   activityLog: ActivityLogItem[];
+  caseChanges: CaseChangeEntry[];
+  clientUpdates: ClientUpdate[];
 }
 
 function emptyState(): AppState {
-  return { isAuthenticated: false, firm: null, team: [], referrals: [], matters: [], clients: [], contacts: [], tasks: [], calendarEvents: [], communications: [], notifications: [], activityLog: [] };
+  return { isAuthenticated: false, firm: null, team: [], referrals: [], matters: [], clients: [], contacts: [], tasks: [], calendarEvents: [], communications: [], notifications: [], activityLog: [], caseChanges: [], clientUpdates: [] };
 }
 
 function seededState(): AppState {
@@ -47,6 +50,8 @@ function seededState(): AppState {
     communications: COMMUNICATIONS,
     notifications: NOTIFICATIONS,
     activityLog: ACTIVITY_LOG,
+    caseChanges: CASE_CHANGES,
+    clientUpdates: CLIENT_UPDATES,
   };
 }
 
@@ -80,6 +85,34 @@ interface AppContextValue extends AppState {
   updateMatterStage: (matterId: string, stage: string) => void;
   markNotificationRead: (id: string) => void;
   logActivity: (message: string) => void;
+  logCaseChange: (matterId: string, input: { summary: string; detail: string; category: CaseChangeCategory; internalOnly: boolean }) => CaseChangeEntry;
+  draftClientUpdateMessage: (matterId: string, changeIds: string[]) => string;
+  sendClientUpdate: (matterId: string, changeIds: string[], message: string) => Promise<BridgeDeliveryResult>;
+  addCaseCalendarEvent: (matterId: string, input: { title: string; type: CalendarEventType; date: string; time: string; description: string; location?: string; internalNotes?: string }) => CalendarEvent;
+  shareCalendarEventWithClient: (matterId: string, eventId: string) => Promise<BridgeDeliveryResult>;
+  updateCaseCalendarEvent: (matterId: string, eventId: string, updates: Partial<Pick<CalendarEvent, "title" | "date" | "time" | "description" | "location" | "internalNotes">>) => void;
+  syncCalendarEventUpdate: (matterId: string, eventId: string) => Promise<BridgeDeliveryResult>;
+  cancelCaseCalendarEvent: (matterId: string, eventId: string, notifyClient: boolean) => Promise<BridgeDeliveryResult | void>;
+}
+
+// Lightweight, deterministic "AI drafting" for client-facing case update language.
+// This never has access to internal notes, strategy, or privileged fields — only
+// the plain-language summary/category the lawyer entered for a non-internal change.
+function changeSummaryToClientSentence(change: CaseChangeEntry): string {
+  switch (change.category) {
+    case "documents":
+      return `${change.summary}, and your lawyer has updated your file to reflect this new information.`;
+    case "status":
+      return `The status of your case has changed: ${change.summary}.`;
+    case "stage":
+      return `Your case has moved forward: ${change.summary}.`;
+    case "deadline":
+      return `There's an update on an upcoming deadline in your case: ${change.summary}.`;
+    case "communication":
+      return `Your legal team has an update to share: ${change.summary}.`;
+    default:
+      return `${change.summary}.`;
+  }
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -402,6 +435,313 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     [logActivity]
   );
 
+  // --- Feature 1: Case Change -> Client Update -----------------------------
+
+  const logCaseChange = useCallback(
+    (matterId: string, input: { summary: string; detail: string; category: CaseChangeCategory; internalOnly: boolean }) => {
+      const entry: CaseChangeEntry = {
+        id: `cc-${Date.now()}`,
+        matterId,
+        summary: input.summary,
+        detail: input.detail,
+        category: input.category,
+        internalOnly: input.internalOnly,
+        createdBy: "Sarah Kim",
+        createdAt: new Date().toISOString(),
+      };
+      setState((prev) => ({
+        ...prev,
+        caseChanges: [entry, ...prev.caseChanges],
+        matters: prev.matters.map((m) => (m.id === matterId ? { ...m, lastActivityAt: new Date().toISOString() } : m)),
+      }));
+      logActivity(`Case updated on matter ${matterId}: ${input.summary}`);
+      return entry;
+    },
+    [logActivity]
+  );
+
+  const draftClientUpdateMessage = useCallback(
+    (matterId: string, changeIds: string[]) => {
+      const changes = state.caseChanges.filter((c) => changeIds.includes(c.id) && !c.internalOnly);
+      const lead =
+        changes.length === 1
+          ? changeSummaryToClientSentence(changes[0])
+          : "There have been updates to your case.";
+      return [
+        "Case Update",
+        "",
+        lead,
+        "",
+        "No action is required from you at this time.",
+        "",
+        "Your legal team will continue reviewing the information and will contact you if anything further is required.",
+      ].join("\n");
+    },
+    [state.caseChanges]
+  );
+
+  const sendClientUpdate = useCallback(
+    async (matterId: string, changeIds: string[], message: string): Promise<BridgeDeliveryResult> => {
+      const matter = state.matters.find((m) => m.id === matterId);
+      const client = state.clients.find((c) => c.id === matter?.clientId);
+      const updateId = `cu-${Date.now()}`;
+      const sentAt = new Date().toISOString();
+
+      let result: BridgeDeliveryResult;
+      try {
+        const res = await fetch("/api/bridge/notices", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            caseId: matterId,
+            caseName: matter?.matterName ?? "Case",
+            clientRef: matter?.clientId ?? "",
+            subject: "Case Update",
+            message,
+            sendingLawyer: "Sarah Kim",
+            firmName: "JusticeIQ Demo Firm",
+            sentAt,
+          }),
+        });
+        result = await res.json();
+      } catch (err) {
+        result = { ok: false, deliveryStatus: "failed", error: err instanceof Error ? err.message : "Unknown error" };
+      }
+
+      const clientUpdate: ClientUpdate = {
+        id: updateId,
+        matterId,
+        clientId: matter?.clientId ?? "",
+        caseChangeIds: changeIds,
+        subject: "Case Update",
+        message,
+        sendingLawyer: "Sarah Kim",
+        sentAt,
+        deliveryStatus: result.deliveryStatus,
+      };
+
+      setState((prev) => ({
+        ...prev,
+        clientUpdates: [clientUpdate, ...prev.clientUpdates],
+        caseChanges: prev.caseChanges.map((c) => (changeIds.includes(c.id) ? { ...c, clientUpdateId: updateId } : c)),
+        communications:
+          result.ok
+            ? [
+                {
+                  id: `comm-${Date.now()}`,
+                  matterId,
+                  referralId: null,
+                  clientId: matter?.clientId ?? null,
+                  type: "secure_message",
+                  from: "Sarah Kim",
+                  to: client?.fullName ?? "Client",
+                  subject: "Case Update",
+                  body: message,
+                  createdAt: sentAt,
+                  teamMemberId: CURRENT_USER_ID,
+                  clientVisible: true,
+                },
+                ...prev.communications,
+              ]
+            : prev.communications,
+      }));
+
+      logActivity(
+        result.ok
+          ? `Sent client update to ${client?.fullName ?? "client"} for matter ${matterId}`
+          : `Client update for matter ${matterId} failed to deliver (${result.error ?? "delivery error"})`
+      );
+
+      return result;
+    },
+    [state.matters, state.clients, logActivity]
+  );
+
+  // --- Feature 2: Shared Case Calendar --------------------------------------
+
+  const addCaseCalendarEvent = useCallback(
+    (matterId: string, input: { title: string; type: CalendarEventType; date: string; time: string; description: string; location?: string; internalNotes?: string }) => {
+      const event: CalendarEvent = {
+        id: `cal-${Date.now()}`,
+        matterId,
+        referralId: null,
+        title: input.title,
+        type: input.type,
+        date: input.date,
+        time: input.time || "09:00",
+        lawyerId: CURRENT_USER_ID,
+        description: input.description,
+        location: input.location,
+        internalNotes: input.internalNotes,
+        sharedWithClient: false,
+        clientSyncStatus: "internal",
+      };
+      setState((prev) => ({
+        ...prev,
+        calendarEvents: [event, ...prev.calendarEvents],
+        matters: prev.matters.map((m) => (m.id === matterId ? { ...m, lastActivityAt: new Date().toISOString() } : m)),
+      }));
+      logActivity(`Added case calendar date "${input.title}" to matter ${matterId}`);
+      return event;
+    },
+    [logActivity]
+  );
+
+  const shareCalendarEventWithClient = useCallback(
+    async (matterId: string, eventId: string): Promise<BridgeDeliveryResult> => {
+      const matter = state.matters.find((m) => m.id === matterId);
+      const event = state.calendarEvents.find((e) => e.id === eventId);
+      if (!event) return { ok: false, deliveryStatus: "failed", error: "Event not found" };
+
+      let result: BridgeDeliveryResult;
+      try {
+        const res = await fetch("/api/bridge/important-dates", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            action: "create",
+            id: event.id,
+            caseId: matterId,
+            caseName: matter?.matterName ?? "Case",
+            title: event.title,
+            date: event.date,
+            time: event.time,
+            description: event.description,
+            location: event.location ?? "",
+          }),
+        });
+        result = await res.json();
+      } catch (err) {
+        result = { ok: false, deliveryStatus: "failed", error: err instanceof Error ? err.message : "Unknown error" };
+      }
+
+      setState((prev) => ({
+        ...prev,
+        calendarEvents: prev.calendarEvents.map((e) =>
+          e.id === eventId
+            ? { ...e, sharedWithClient: result.ok, clientSyncStatus: result.ok ? "shared" : "internal", lastSharedAt: result.ok ? new Date().toISOString() : e.lastSharedAt }
+            : e
+        ),
+      }));
+      logActivity(
+        result.ok
+          ? `Shared important date "${event.title}" with client for matter ${matterId}`
+          : `Failed to share important date "${event.title}" with client (${result.error ?? "delivery error"})`
+      );
+      return result;
+    },
+    [state.matters, state.calendarEvents, logActivity]
+  );
+
+  const updateCaseCalendarEvent = useCallback(
+    (matterId: string, eventId: string, updates: Partial<Pick<CalendarEvent, "title" | "date" | "time" | "description" | "location" | "internalNotes">>) => {
+      setState((prev) => ({
+        ...prev,
+        calendarEvents: prev.calendarEvents.map((e) =>
+          e.id === eventId ? { ...e, ...updates, clientSyncStatus: e.sharedWithClient ? "update_pending" : e.clientSyncStatus } : e
+        ),
+      }));
+      logActivity(`Updated case calendar date for matter ${matterId}`);
+    },
+    [logActivity]
+  );
+
+  const syncCalendarEventUpdate = useCallback(
+    async (matterId: string, eventId: string): Promise<BridgeDeliveryResult> => {
+      const matter = state.matters.find((m) => m.id === matterId);
+      const event = state.calendarEvents.find((e) => e.id === eventId);
+      if (!event) return { ok: false, deliveryStatus: "failed", error: "Event not found" };
+
+      let result: BridgeDeliveryResult;
+      try {
+        const res = await fetch("/api/bridge/important-dates", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            action: "update",
+            id: event.id,
+            caseId: matterId,
+            caseName: matter?.matterName ?? "Case",
+            title: event.title,
+            date: event.date,
+            time: event.time,
+            description: event.description,
+            location: event.location ?? "",
+          }),
+        });
+        result = await res.json();
+      } catch (err) {
+        result = { ok: false, deliveryStatus: "failed", error: err instanceof Error ? err.message : "Unknown error" };
+      }
+
+      setState((prev) => ({
+        ...prev,
+        calendarEvents: prev.calendarEvents.map((e) =>
+          e.id === eventId ? { ...e, clientSyncStatus: result.ok ? "shared" : e.clientSyncStatus, lastSharedAt: result.ok ? new Date().toISOString() : e.lastSharedAt } : e
+        ),
+      }));
+      logActivity(
+        result.ok
+          ? `Updated shared client calendar for "${event.title}" (matter ${matterId})`
+          : `Failed to sync updated date "${event.title}" to client (${result.error ?? "delivery error"})`
+      );
+      return result;
+    },
+    [state.matters, state.calendarEvents, logActivity]
+  );
+
+  const cancelCaseCalendarEvent = useCallback(
+    async (matterId: string, eventId: string, notifyClient: boolean): Promise<BridgeDeliveryResult | void> => {
+      const matter = state.matters.find((m) => m.id === matterId);
+      const event = state.calendarEvents.find((e) => e.id === eventId);
+      if (!event) return;
+
+      const wasShared = !!event.sharedWithClient;
+
+      if (!notifyClient || !wasShared) {
+        setState((prev) => ({
+          ...prev,
+          calendarEvents: prev.calendarEvents.map((e) => (e.id === eventId ? { ...e, cancelled: true } : e)),
+        }));
+        logActivity(`Cancelled case calendar date "${event.title}" for matter ${matterId}${wasShared ? " (client calendar not changed)" : ""}`);
+        return;
+      }
+
+      let result: BridgeDeliveryResult;
+      try {
+        const res = await fetch("/api/bridge/important-dates", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            action: "cancel",
+            id: event.id,
+            caseId: matterId,
+            caseName: matter?.matterName ?? "Case",
+            title: event.title,
+            date: event.date,
+          }),
+        });
+        result = await res.json();
+      } catch (err) {
+        result = { ok: false, deliveryStatus: "failed", error: err instanceof Error ? err.message : "Unknown error" };
+      }
+
+      setState((prev) => ({
+        ...prev,
+        calendarEvents: prev.calendarEvents.map((e) =>
+          e.id === eventId ? { ...e, cancelled: true, cancelledNotifiedClient: result.ok } : e
+        ),
+      }));
+      logActivity(
+        result.ok
+          ? `Notified client of cancellation of "${event.title}" (matter ${matterId})`
+          : `Failed to notify client of cancellation of "${event.title}" (${result.error ?? "delivery error"})`
+      );
+      return result;
+    },
+    [state.matters, state.calendarEvents, logActivity]
+  );
+
   const markNotificationRead = useCallback((id: string) => {
     setState((prev) => ({ ...prev, notifications: prev.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)) }));
   }, []);
@@ -440,13 +780,23 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       updateMatterStage,
       markNotificationRead,
       logActivity,
+      logCaseChange,
+      draftClientUpdateMessage,
+      sendClientUpdate,
+      addCaseCalendarEvent,
+      shareCalendarEventWithClient,
+      updateCaseCalendarEvent,
+      syncCalendarEventUpdate,
+      cancelCaseCalendarEvent,
     }),
     [
       state, hydrated, currentUser, loginDemo, login, signup, logout, getReferral, getMatter, updateReferralStatus,
       assignLawyer, addReferralNote, declineReferral, runConflictCheck, scheduleConsultation, recordConsultationOutcome,
       convertReferralToMatter, addTask, updateTaskStatus, addMatterNote, addMatterDocument, addCommunication,
       toggleCommunicationClientVisible, toggleDocumentClientVisible, markDocumentUpdated, notifyClientOfDocumentUpdate,
-      updateMatterStage, markNotificationRead, logActivity,
+      updateMatterStage, markNotificationRead, logActivity, logCaseChange, draftClientUpdateMessage, sendClientUpdate,
+      addCaseCalendarEvent, shareCalendarEventWithClient, updateCaseCalendarEvent, syncCalendarEventUpdate,
+      cancelCaseCalendarEvent,
     ]
   );
 

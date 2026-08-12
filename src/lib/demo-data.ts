@@ -1,6 +1,7 @@
 import {
-  ActivityLogItem, CalendarEvent, Client, Communication, Consultation, Contact, Firm, Matter, MatterDocument,
-  MatterParty, MatterTask, Notification, Referral, SubscriptionTier, TaskTemplateItem, TeamMember,
+  ActivityLogItem, CalendarEvent, CaseChangeEntry, Client, ClientUpdate, Communication, Consultation, Contact, Firm,
+  Matter, MatterDocument, MatterParty, MatterTask, Notification, Referral, SubscriptionTier, TaskTemplateItem,
+  TeamMember,
 } from "./types";
 
 // All names, firms, and figures below are FICTIONAL DEMONSTRATION DATA
@@ -731,6 +732,39 @@ export const COMMUNICATIONS: Communication[] = [
   { id: "comm-10", matterId: null, referralId: "ref-6", clientId: null, type: "email_log", from: "Priya Chandra", to: "Ben Castellano", subject: "Referral declined — outside jurisdiction", body: "Thank you for reaching out. Our firm is only licensed in California, so we're unable to represent you in this Nevada wage matter. We've included a referral resource below.", createdAt: "2026-07-11T09:15:00Z", teamMemberId: "tm-3" },
   { id: "comm-11", matterId: "matter-2", referralId: null, clientId: "client-2", type: "automated_reminder", from: "JusticeIQ System", to: "Priya Chandra", subject: "Deadline approaching", body: "Employer response to the demand letter is due within 2 weeks (Aug 10, 2026).", createdAt: "2026-07-27T08:00:00Z", teamMemberId: "tm-3" },
   { id: "comm-12", matterId: null, referralId: "ref-9", clientId: null, type: "internal_comment", from: "Marcus Delgado", to: "Internal", subject: "Initial review notes", body: "Reviewing premises liability referral; requesting maintenance and lease records before scheduling a consultation.", createdAt: "2026-08-01T09:00:00Z", teamMemberId: "tm-2" },
+];
+
+// ---------------------------------------------------------------------
+// Case changes & client updates (JusticeIQ -> JusticeChamp bridge)
+// ---------------------------------------------------------------------
+
+export const CASE_CHANGES: CaseChangeEntry[] = [
+  {
+    id: "cc-1",
+    matterId: "matter-1",
+    summary: "Defendant's insurer provided additional documents",
+    detail: "Received Palisade Mutual's supplemental claim file, including the adjuster's inspection photos and a revised damage estimate.",
+    category: "documents",
+    internalOnly: false,
+    createdBy: "Marcus Delgado",
+    createdAt: "2026-08-05T16:10:00Z",
+    clientUpdateId: "cu-1",
+  },
+];
+
+export const CLIENT_UPDATES: ClientUpdate[] = [
+  {
+    id: "cu-1",
+    matterId: "matter-1",
+    clientId: "client-1",
+    caseChangeIds: ["cc-1"],
+    subject: "Case Update",
+    message:
+      "There has been an update to your case.\n\nThe defendant has provided additional documents and your lawyer has updated your file to reflect this new information.\n\nNo action is required from you at this time.\n\nYour legal team will continue reviewing the information and will contact you if anything further is required.",
+    sendingLawyer: "Marcus Delgado",
+    sentAt: "2026-08-05T16:14:00Z",
+    deliveryStatus: "sent",
+  },
 ];
 
 // ---------------------------------------------------------------------
