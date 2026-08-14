@@ -5,7 +5,7 @@ import {
 } from "./types";
 
 // All names, firms, and figures below are FICTIONAL DEMONSTRATION DATA
-// created for the JusticeIQ MVP walkthrough. No real persons, law firms,
+// created for the SolonIQ MVP walkthrough. No real persons, law firms,
 // or client matters are represented. Today's demo "current date" is
 // treated as 2026-08-04 for deadline/overdue framing.
 
@@ -723,19 +723,19 @@ export const COMMUNICATIONS: Communication[] = [
   { id: "comm-1", matterId: "matter-1", referralId: null, clientId: "client-1", type: "secure_message", from: "Marcus Delgado", to: "Wei Chen", subject: "Discovery update", body: "We've received the defendant's written discovery requests and are preparing responses ahead of the August 15 deadline.", createdAt: "2026-08-01T14:00:00Z", teamMemberId: "tm-2" },
   { id: "comm-2", matterId: "matter-1", referralId: null, clientId: "client-1", type: "document_request", from: "Emily Tran", to: "Wei Chen", subject: "Updated physical therapy records", body: "Could you ask Springvale Physiotherapy to send us your most recent progress notes?", createdAt: "2026-07-20T10:00:00Z", teamMemberId: "tm-5" },
   { id: "comm-3", matterId: "matter-2", referralId: null, clientId: "client-2", type: "secure_message", from: "Priya Chandra", to: "Latisha Brown", subject: "Demand letter sent", body: "We've sent the demand letter to Meridian Manufacturing's counsel. We'll follow up if we don't hear back within a few weeks.", createdAt: "2026-06-15T15:00:00Z", teamMemberId: "tm-3" },
-  { id: "comm-4", matterId: null, referralId: "ref-1", clientId: null, type: "automated_reminder", from: "JusticeIQ System", to: "Marcus Delgado", subject: "New referral awaiting review", body: "A new personal injury referral from JusticeChamp Consumer Intake is awaiting review. Response deadline: Aug 6, 2026.", createdAt: "2026-08-02T14:25:00Z", teamMemberId: "tm-2" },
+  { id: "comm-4", matterId: null, referralId: "ref-1", clientId: null, type: "automated_reminder", from: "SolonIQ System", to: "Marcus Delgado", subject: "New referral awaiting review", body: "A new personal injury referral from JusticeChamp Consumer Intake is awaiting review. Response deadline: Aug 6, 2026.", createdAt: "2026-08-02T14:25:00Z", teamMemberId: "tm-2" },
   { id: "comm-5", matterId: null, referralId: "ref-3", clientId: null, type: "document_request", from: "Marcus Delgado", to: "Danielle Ortiz", subject: "Additional documentation requested", body: "To continue evaluating your claim, could you share any photos of the location and confirm whether a store employee witnessed the fall?", createdAt: "2026-07-29T10:00:00Z", teamMemberId: "tm-2" },
   { id: "comm-6", matterId: null, referralId: "ref-4", clientId: null, type: "consultation_note", from: "Priya Chandra", to: "Internal", subject: "Pre-consultation prep notes", body: "Reviewed performance reviews; documentary record is strong. Plan to explore comparator evidence during the consultation.", createdAt: "2026-07-27T15:00:00Z", teamMemberId: "tm-3" },
   { id: "comm-7", matterId: "matter-3", referralId: null, clientId: "client-3", type: "phone_note", from: "Marcus Delgado", to: "Sofia Marquez", subject: "Settlement range discussion", body: "Called client to discuss acceptable settlement range ahead of mediation. Client comfortable with the proposed range.", createdAt: "2026-07-25T13:00:00Z", teamMemberId: "tm-2" },
   { id: "comm-8", matterId: "matter-4", referralId: null, clientId: "client-4", type: "email_log", from: "Priya Chandra", to: "David Okonkwo", subject: "Complaint filed confirmation", body: "Confirming that we filed the complaint on July 15. We're now awaiting the defendant's response.", createdAt: "2026-07-15T16:00:00Z", teamMemberId: "tm-3" },
   { id: "comm-9", matterId: "matter-5", referralId: null, clientId: "client-5", type: "internal_comment", from: "Marcus Delgado", to: "Internal", subject: "Expert report timeline", body: "Following up with Whitfield Engineering — report is running about a week behind schedule.", createdAt: "2026-07-18T10:00:00Z", teamMemberId: "tm-2" },
   { id: "comm-10", matterId: null, referralId: "ref-6", clientId: null, type: "email_log", from: "Priya Chandra", to: "Ben Castellano", subject: "Referral declined — outside jurisdiction", body: "Thank you for reaching out. Our firm is only licensed in California, so we're unable to represent you in this Nevada wage matter. We've included a referral resource below.", createdAt: "2026-07-11T09:15:00Z", teamMemberId: "tm-3" },
-  { id: "comm-11", matterId: "matter-2", referralId: null, clientId: "client-2", type: "automated_reminder", from: "JusticeIQ System", to: "Priya Chandra", subject: "Deadline approaching", body: "Employer response to the demand letter is due within 2 weeks (Aug 10, 2026).", createdAt: "2026-07-27T08:00:00Z", teamMemberId: "tm-3" },
+  { id: "comm-11", matterId: "matter-2", referralId: null, clientId: "client-2", type: "automated_reminder", from: "SolonIQ System", to: "Priya Chandra", subject: "Deadline approaching", body: "Employer response to the demand letter is due within 2 weeks (Aug 10, 2026).", createdAt: "2026-07-27T08:00:00Z", teamMemberId: "tm-3" },
   { id: "comm-12", matterId: null, referralId: "ref-9", clientId: null, type: "internal_comment", from: "Marcus Delgado", to: "Internal", subject: "Initial review notes", body: "Reviewing premises liability referral; requesting maintenance and lease records before scheduling a consultation.", createdAt: "2026-08-01T09:00:00Z", teamMemberId: "tm-2" },
 ];
 
 // ---------------------------------------------------------------------
-// Case changes & client updates (JusticeIQ -> JusticeChamp bridge)
+// Case changes & client updates (SolonIQ -> JusticeChamp bridge)
 // ---------------------------------------------------------------------
 
 export const CASE_CHANGES: CaseChangeEntry[] = [
@@ -781,8 +781,8 @@ export const NOTIFICATIONS: Notification[] = [
 ];
 
 export const ACTIVITY_LOG: ActivityLogItem[] = [
-  { id: "act-1", message: "Received new referral ref-1 (Jordan Reyes, personal injury) from JusticeChamp.", timestamp: "2026-08-02T14:20:00Z", actor: "JusticeIQ System" },
-  { id: "act-2", message: "Received new referral ref-2 (Jordan Reyes, employment) from JusticeChamp.", timestamp: "2026-08-03T09:10:00Z", actor: "JusticeIQ System" },
+  { id: "act-1", message: "Received new referral ref-1 (Jordan Reyes, personal injury) from JusticeChamp.", timestamp: "2026-08-02T14:20:00Z", actor: "SolonIQ System" },
+  { id: "act-2", message: "Received new referral ref-2 (Jordan Reyes, employment) from JusticeChamp.", timestamp: "2026-08-03T09:10:00Z", actor: "SolonIQ System" },
   { id: "act-3", message: "Requested additional documentation on referral ref-3 (Danielle Ortiz).", timestamp: "2026-07-29T10:00:00Z", actor: "Marcus Delgado" },
   { id: "act-4", message: "Confirmed consultation for referral ref-4 (Michael Osei).", timestamp: "2026-07-27T15:00:00Z", actor: "Priya Chandra" },
   { id: "act-5", message: "Marked referral ref-5 (Rachel Nakamura) as accepted.", timestamp: "2026-07-30T14:00:00Z", actor: "Marcus Delgado" },

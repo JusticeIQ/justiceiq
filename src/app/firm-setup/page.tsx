@@ -31,7 +31,7 @@ export default function FirmSetupPage() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-2 justify-center mb-6">
           <span className="h-9 w-9 rounded-lg bg-teal-500 flex items-center justify-center text-white font-bold text-sm">IQ</span>
-          <span className="font-semibold text-xl text-white">JusticeIQ<span className="text-teal-400">™</span></span>
+          <span className="font-semibold text-xl text-white">SolonIQ<span className="text-teal-400">™</span></span>
         </div>
         <Card>
           <div className="flex items-center justify-between mb-6">

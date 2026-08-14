@@ -939,7 +939,7 @@ export function MatterWorkspace({ matterId, activeTab }: { matterId: string; act
 
       {/* Feature 1: Case Change -> Client Update modals */}
       <Modal open={!!caseUpdatedModalChangeId} onClose={() => setCaseUpdatedModalChangeId(null)} title="Case Updated" width="sm">
-        <p className="text-sm text-graphite-600 mb-4">Would you like JusticeIQ to summarize these changes and prepare an update for the client?</p>
+        <p className="text-sm text-graphite-600 mb-4">Would you like SolonIQ to summarize these changes and prepare an update for the client?</p>
         <div className="flex gap-2 justify-end">
           <Button variant="ghost" onClick={() => setCaseUpdatedModalChangeId(null)}>No — do not share</Button>
           <Button onClick={handlePrepareClientUpdate}>Yes — prepare client update</Button>

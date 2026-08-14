@@ -57,7 +57,7 @@ should independently verify at least:
 - [ ] Data residency, retention, and deletion practices meet applicable privacy law (e.g. state
       privacy statutes, and any jurisdiction-specific bar rules on client file retention)
 - [ ] Multi-factor authentication and session security meet the firm's IT security policy
-- [ ] A signed data processing agreement is in place between JusticeIQ, JusticeChamp, and the firm
+- [ ] A signed data processing agreement is in place between SolonIQ, JusticeChamp, and the firm
       covering consumer data shared via the referral pipeline
 - [ ] Trust-accounting and billing integrations (LawPay, QuickBooks) are reviewed for compliance
       with applicable trust-accounting rules before enabling real money movement

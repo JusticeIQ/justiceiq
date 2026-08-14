@@ -48,7 +48,7 @@ seeded demo mode.
 cd justiceiq
 git init
 git add .
-git commit -m "Initial JusticeIQ MVP"
+git commit -m "Initial SolonIQ MVP"
 git branch -M main
 git remote add origin https://github.com/<your-org>/justiceiq.git
 git push -u origin main

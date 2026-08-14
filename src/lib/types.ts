@@ -1,4 +1,4 @@
-// Core domain types for the JusticeIQ lawyer portal MVP.
+// Core domain types for the SolonIQ lawyer portal MVP.
 // Mirrors supabase/schema.sql so the demo data layer and a future
 // production data layer share one shape. Types prefixed "Claim" model
 // data that originates in the connected JusticeChamp consumer app.
@@ -383,7 +383,7 @@ export interface TaskTemplateItem {
   tasks: string[];
 }
 
-// --- Feature: Case Change -> Client Update (JusticeIQ -> JusticeChamp bridge) ---
+// --- Feature: Case Change -> Client Update (SolonIQ -> JusticeChamp bridge) ---
 
 export type CaseChangeCategory = "documents" | "status" | "stage" | "deadline" | "communication" | "other";
 

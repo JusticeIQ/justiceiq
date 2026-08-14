@@ -7,7 +7,7 @@ function PublicHeader() {
       <div className="container-page flex items-center justify-between h-16">
         <Link href="/" className="flex items-center gap-2">
           <span className="h-8 w-8 rounded-lg bg-teal-500 flex items-center justify-center text-white font-bold text-sm">IQ</span>
-          <span className="font-semibold text-lg tracking-tight">JusticeIQ<span className="text-teal-400">™</span></span>
+          <span className="font-semibold text-lg tracking-tight">SolonIQ<span className="text-teal-400">™</span></span>
         </Link>
         <div className="flex items-center gap-2">
           <Link href="/login" className="px-4 py-2 text-sm text-white/80 hover:text-white">Sign in</Link>
@@ -20,7 +20,7 @@ function PublicHeader() {
 
 const WORKFLOW = [
   { n: "1", title: "Consumer submits an incident report", desc: "Via JusticeChamp™ Consumer Intake, the connected consumer application." },
-  { n: "2", title: "Structured referral arrives in JusticeIQ", desc: "Complete with a claim summary and preliminary claim-readiness score." },
+  { n: "2", title: "Structured referral arrives in SolonIQ", desc: "Complete with a claim summary and preliminary claim-readiness score." },
   { n: "3", title: "Lawyer reviews and responds", desc: "Accept, decline, or request more information — with conflict screening built in." },
   { n: "4", title: "Referral becomes a matter", desc: "Convert to a fully tracked matter with tasks, deadlines, documents, and billing." },
 ];
@@ -41,7 +41,7 @@ export default function LandingPage() {
           <div className="container-page py-20 md:py-28 grid md:grid-cols-2 gap-10 items-center">
             <div>
               <Badge tone="teal">Connected to JusticeChamp™ Consumer Intake</Badge>
-              <h1 className="text-4xl md:text-5xl font-bold leading-tight mt-5">JusticeIQ™</h1>
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight mt-5">SolonIQ™</h1>
               <p className="mt-3 text-lg md:text-xl font-semibold text-teal-400">
                 The operating system for litigation intelligence.
               </p>
@@ -128,7 +128,7 @@ export default function LandingPage() {
         </section>
       </main>
       <footer className="bg-graphite-950 text-white/50 text-xs text-center py-6 px-4">
-        JusticeIQ is a technology platform and does not provide legal advice. All sample firm, lawyer, and referral data is fictional demonstration content. © 2026 JusticeIQ Technologies, Inc.
+        SolonIQ is a technology platform and does not provide legal advice. All sample firm, lawyer, and referral data is fictional demonstration content. © 2026 SolonIQ Technologies, Inc.
       </footer>
     </div>
   );

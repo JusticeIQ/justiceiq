@@ -499,7 +499,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
             subject: "Case Update",
             message,
             sendingLawyer: "Sarah Kim",
-            firmName: "JusticeIQ Demo Firm",
+            firmName: "SolonIQ Demo Firm",
             sentAt,
           }),
         });

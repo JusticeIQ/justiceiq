@@ -3,8 +3,8 @@
 Pairs with the interactive `/demo` page (18-step guided tour with jump links). Suggested runtime:
 8–12 minutes.
 
-1. **Landing page (`/`)** — "JusticeIQ is the law-firm side of a two-product ecosystem. JusticeChamp
-   helps consumers document a claim; JusticeIQ is where a firm receives, triages, and manages that
+1. **Landing page (`/`)** — "SolonIQ is the law-firm side of a two-product ecosystem. JusticeChamp
+   helps consumers document a claim; SolonIQ is where a firm receives, triages, and manages that
    referral all the way through to a resolved matter."
 2. **Login (`/login`)** — Click "Continue with demo law firm." No password needed for the demo.
 3. **Dashboard (`/dashboard`)** — Point out new referrals, matters requiring attention, upcoming
@@ -37,4 +37,4 @@ Pairs with the interactive `/demo` page (18-step guided tour with jump links). S
 
 **Good closing line:** "Everything you just saw — the referral, the score, the documents — started
 as a five-minute consumer intake in JusticeChamp. That's the pitch: JusticeChamp fills the top of
-the funnel, JusticeIQ runs the firm."
+the funnel, SolonIQ runs the firm."

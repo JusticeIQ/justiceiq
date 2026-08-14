@@ -2,11 +2,11 @@
 
 ## Product architecture
 
-JusticeIQ closes the loop on the workflow described in the build spec:
+SolonIQ closes the loop on the workflow described in the build spec:
 
 1. A consumer submits an incident report in JusticeChamp.
 2. JusticeChamp produces a structured claim summary and a preliminary claim-readiness score.
-3. A matched lawyer receives the referral in JusticeIQ's pipeline (`/referrals`).
+3. A matched lawyer receives the referral in SolonIQ's pipeline (`/referrals`).
 4. The lawyer reviews the referral, runs a conflict check, and accepts, declines, or requests more
    information.
 5. An accepted referral is converted into a matter, preserving the source referral ID.

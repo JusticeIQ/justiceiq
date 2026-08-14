@@ -33,7 +33,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 justify-center mb-6">
           <span className="h-9 w-9 rounded-lg bg-teal-500 flex items-center justify-center text-white font-bold text-sm">IQ</span>
-          <span className="font-semibold text-xl text-white">JusticeIQ<span className="text-teal-400">™</span></span>
+          <span className="font-semibold text-xl text-white">SolonIQ<span className="text-teal-400">™</span></span>
         </div>
         <Card>
           <h1 className="text-xl font-bold text-graphite-900">Sign in to your firm</h1>

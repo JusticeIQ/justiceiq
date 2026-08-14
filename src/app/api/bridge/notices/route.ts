@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Server-to-server proxy: relays an approved client update from JusticeIQ to
+// Server-to-server proxy: relays an approved client update from SolonIQ to
 // JusticeChamp's Notices inbox. This route only runs after a lawyer has
 // explicitly clicked "Send to Client" in the review screen — nothing here
 // runs automatically. See docs/INTEGRATION_SPEC.md.

@@ -29,7 +29,7 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
         <div className="flex items-center gap-2 px-5 h-16 border-b border-white/10 shrink-0">
           <span className="h-8 w-8 rounded-lg bg-teal-500 flex items-center justify-center text-white font-bold text-sm">IQ</span>
           <span className="font-semibold text-lg tracking-tight">
-            JusticeIQ<span className="text-teal-400">™</span>
+            SolonIQ<span className="text-teal-400">™</span>
           </span>
         </div>
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
@@ -51,7 +51,7 @@ export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNa
           })}
         </nav>
         <div className="p-3 border-t border-white/10 text-xs text-white/50 shrink-0">
-          <p className="text-white/80 font-medium truncate">{firm?.name ?? "JusticeIQ"}</p>
+          <p className="text-white/80 font-medium truncate">{firm?.name ?? "SolonIQ"}</p>
           <p className="mt-0.5">Firm switching coming soon</p>
         </div>
       </div>

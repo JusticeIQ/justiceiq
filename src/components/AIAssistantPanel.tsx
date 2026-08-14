@@ -37,7 +37,7 @@ export function AIAssistantPanel({ context }: { context?: string }) {
         <div className="flex items-center gap-2">
           <span className="h-8 w-8 rounded-full bg-teal-500 text-white flex items-center justify-center text-sm font-semibold" aria-hidden>AI</span>
           <div>
-            <p className="font-semibold text-graphite-900 text-sm">JusticeIQ AI Assistant</p>
+            <p className="font-semibold text-graphite-900 text-sm">SolonIQ AI Assistant</p>
             <Badge tone="amber">Draft only — requires review</Badge>
           </div>
         </div>

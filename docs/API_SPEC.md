@@ -1,4 +1,4 @@
-# API Specification (JusticeChamp ⇄ JusticeIQ)
+# API Specification (JusticeChamp ⇄ SolonIQ)
 
 Illustrative endpoint contracts for the integration described in `docs/INTEGRATION_SPEC.md`. These
 are **not implemented as live network endpoints in this MVP** — the demo simulates the same actions
@@ -33,7 +33,7 @@ entries in `demo-data.ts` (`ref-1`, `ref-2`).
 
 `GET /api/referrals/:id`
 Used by JusticeChamp to display current status/assignment to the consumer, and internally by
-JusticeIQ. Demo equivalent: `useAppState().getReferral(id)`.
+SolonIQ. Demo equivalent: `useAppState().getReferral(id)`.
 
 ## Update referral status
 
@@ -41,7 +41,7 @@ JusticeIQ. Demo equivalent: `useAppState().getReferral(id)`.
 ```json
 { "status": "accepted", "declineReason": null }
 ```
-Pushed from JusticeIQ → JusticeChamp whenever a lawyer changes status, so the consumer dashboard
+Pushed from SolonIQ → JusticeChamp whenever a lawyer changes status, so the consumer dashboard
 reflects it. Demo equivalent: `updateReferralStatus`, `declineReferral`.
 
 ## Request more information
@@ -68,7 +68,7 @@ further (e.g. with an expert). Demo equivalent: referral `documents` are pre-att
 ```json
 { "proposedTimes": ["2026-08-06T16:00:00Z"], "meetingType": "video", "lawyerId": "tm-3", "preparationInstructions": "..." }
 ```
-Also creates a `calendar_events` row in JusticeIQ. Demo equivalent: `scheduleConsultation`.
+Also creates a `calendar_events` row in SolonIQ. Demo equivalent: `scheduleConsultation`.
 
 ## Convert referral to matter
 
@@ -76,7 +76,7 @@ Also creates a `calendar_events` row in JusticeIQ. Demo equivalent: `scheduleCon
 ```json
 { "matterName": "...", "responsibleLawyerId": "tm-2", "clientEmail": "...", "stage": "Intake" }
 ```
-JusticeIQ-internal (does not call back to JusticeChamp), but the resulting `matters.id` is
+SolonIQ-internal (does not call back to JusticeChamp), but the resulting `matters.id` is
 recommended to be pushed back via *Send client notification* below so the consumer knows their
 matter is open. Demo equivalent: `convertReferralToMatter`.
 

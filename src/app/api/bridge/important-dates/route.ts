@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Server-to-server proxy: relays a shared / updated / cancelled case-calendar
-// date from JusticeIQ to JusticeChamp's Important Dates calendar. Only
+// date from SolonIQ to JusticeChamp's Important Dates calendar. Only
 // called after a lawyer explicitly chooses to share (or sync) a date.
 const WEBHOOK_SECRET = process.env.JUSTICECHAMP_WEBHOOK_SECRET || "demo-shared-secret-justiceiq-justicechamp";
 const JUSTICECHAMP_URL = process.env.NEXT_PUBLIC_JUSTICECHAMP_APP_URL || "http://localhost:3001";

@@ -28,7 +28,7 @@ export default function IntegrationsPage() {
         <h1 className="text-2xl font-bold text-graphite-900">Integrations</h1>
         <InfoBanner tone="gray">
           The integrations below are demonstration placeholders for a future release. None are functional in this MVP —
-          JusticeIQ's only live connection today is the JusticeChamp Consumer Intake referral pipeline (see
+          SolonIQ's only live connection today is the JusticeChamp Consumer Intake referral pipeline (see
           docs/INTEGRATION_SPEC.md).
         </InfoBanner>
 

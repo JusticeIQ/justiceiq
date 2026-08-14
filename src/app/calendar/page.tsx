@@ -54,7 +54,7 @@ export default function CalendarPage() {
         </div>
 
         <InfoBanner tone="amber">
-          JusticeIQ calendar reminders are a convenience tool. Lawyers remain fully responsible for independently
+          SolonIQ calendar reminders are a convenience tool. Lawyers remain fully responsible for independently
           verifying and calendaring all legal deadlines according to their firm's procedures.
         </InfoBanner>
 

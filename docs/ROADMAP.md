@@ -30,7 +30,7 @@
 
 ## Long-term
 
-- Deeper JusticeIQ ecosystem features: multi-firm/multi-office support beyond the current 2-office
+- Deeper SolonIQ ecosystem features: multi-firm/multi-office support beyond the current 2-office
   seed, cross-firm analytics for platform operators, and a true firm-selector (the sidebar already
   has a placeholder for this)
 - Practice-management integrations (Clio, PracticePanther, Filevine, Litify) as two-way syncs, not

@@ -1,10 +1,10 @@
-# JusticeIQ™ — Lawyer Portal & Case Management MVP
+# SolonIQ™ — Lawyer Portal & Case Management MVP
 
-JusticeIQ is the professional law-firm portal connected to **JusticeChamp™ Consumer Intake**. It lets
+SolonIQ is the professional law-firm portal connected to **JusticeChamp™ Consumer Intake**. It lets
 participating lawyers and firms receive qualified referrals, review structured claim information,
 communicate with clients, manage matters end to end, and generate legal-business intelligence.
 
-> JusticeIQ is a technology platform. It does not provide legal advice, does not replace a firm's
+> SolonIQ is a technology platform. It does not provide legal advice, does not replace a firm's
 > conflict-check procedure, and does not guarantee outcomes. See `docs/SECURITY.md` for the
 > pre-production compliance checklist.
 
@@ -103,7 +103,7 @@ See `docs/DEPLOYMENT.md` for full Supabase, Vercel, and GitHub instructions.
 
 ## JusticeChamp integration
 
-JusticeIQ is designed to receive referrals from JusticeChamp Consumer Intake via a documented API
+SolonIQ is designed to receive referrals from JusticeChamp Consumer Intake via a documented API
 contract — see `docs/INTEGRATION_SPEC.md` for the proposed shared data model and
 `docs/API_SPEC.md` for example endpoints (create referral, update status, schedule consultation,
 convert to matter, and more). In this MVP, that connection is simulated: referrals `ref-1` and
@@ -114,7 +114,7 @@ JusticeChamp MVP to illustrate the intended cross-product linkage.
 ## Documentation
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system architecture description
-- [`docs/INTEGRATION_SPEC.md`](docs/INTEGRATION_SPEC.md) — JusticeChamp ⇄ JusticeIQ integration spec
+- [`docs/INTEGRATION_SPEC.md`](docs/INTEGRATION_SPEC.md) — JusticeChamp ⇄ SolonIQ integration spec
 - [`docs/API_SPEC.md`](docs/API_SPEC.md) — example endpoints / server actions
 - [`docs/SECURITY.md`](docs/SECURITY.md) — security model + pre-production compliance checklist
 - [`docs/ROLES_PERMISSIONS.md`](docs/ROLES_PERMISSIONS.md) — role and permissions matrix
@@ -134,4 +134,4 @@ seeded firm (there is no real backend to authenticate against yet).
 ## License / disclaimer
 
 All firm, lawyer, client, and referral data shown is fictional demonstration content created for
-this MVP. JusticeIQ is not a law firm and does not provide legal advice.
+this MVP. SolonIQ is not a law firm and does not provide legal advice.

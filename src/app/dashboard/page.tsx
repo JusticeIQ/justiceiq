@@ -91,7 +91,7 @@ export default function DashboardPage() {
   const consumerIntegration = [
     { label: "New Incident Reports (24h)", value: "6", sub: "Submitted via JusticeChamp™" },
     { label: "AI Qualified Leads", value: "4", sub: "Readiness score 70+" },
-    { label: "Cases Awaiting Review", value: String(awaitingResponse.length), sub: "In JusticeIQ referral queue" },
+    { label: "Cases Awaiting Review", value: String(awaitingResponse.length), sub: "In SolonIQ referral queue" },
     { label: "Referral Acceptance Rate", value: "71%", sub: "Trailing 30 days" },
   ];
 
@@ -161,7 +161,7 @@ export default function DashboardPage() {
             <h2 className="font-semibold text-graphite-900">Litigation Intelligence</h2>
             <Badge tone="teal">Defensible data moat</Badge>
           </div>
-          <p className="text-sm text-graphite-500 mb-4">Aggregate case, judge, employer, and carrier intelligence drawn from the JusticeIQ litigation dataset.</p>
+          <p className="text-sm text-graphite-500 mb-4">Aggregate case, judge, employer, and carrier intelligence drawn from the SolonIQ litigation dataset.</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
             {litigationIntelligence.map((m) => (
               <StatCard key={m.label} label={m.label} value={m.value} sub={m.sub} />
@@ -235,7 +235,7 @@ export default function DashboardPage() {
               <h2 className="font-semibold text-graphite-900">Consumer + Lawyer Integration</h2>
               <Badge tone="teal">Fed by JusticeChamp™</Badge>
             </div>
-            <p className="text-sm text-graphite-500 mb-4">JusticeChamp consumer intake flows directly into the JusticeIQ referral pipeline.</p>
+            <p className="text-sm text-graphite-500 mb-4">JusticeChamp consumer intake flows directly into the SolonIQ referral pipeline.</p>
             <div className="grid grid-cols-2 gap-4">
               {consumerIntegration.map((m) => (
                 <StatCard key={m.label} label={m.label} value={m.value} sub={m.sub} />
@@ -347,7 +347,7 @@ export default function DashboardPage() {
             <h2 className="font-semibold">Founder Dashboard</h2>
             <Badge tone="teal">Platform-wide, all firms</Badge>
           </div>
-          <p className="text-sm text-white/60 mb-4">Network-wide momentum across the JusticeIQ ecosystem — illustrative figures for investor and founder review.</p>
+          <p className="text-sm text-white/60 mb-4">Network-wide momentum across the SolonIQ ecosystem — illustrative figures for investor and founder review.</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {founderStats.map((s) => (
               <div key={s.label} className="rounded-lg bg-white/5 border border-white/10 p-4">
@@ -360,7 +360,7 @@ export default function DashboardPage() {
 
         <Card className="border-dashed">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="font-semibold text-graphite-900">JusticeIQ Intelligence</h2>
+            <h2 className="font-semibold text-graphite-900">SolonIQ Intelligence</h2>
             <Badge tone="amber">Coming soon</Badge>
           </div>
           <p className="text-sm text-graphite-500 mb-4">A forward-looking preview of the market and litigation-trend intelligence this dataset will support.</p>
